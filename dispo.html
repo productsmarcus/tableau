@@ -24,7 +24,7 @@ main{padding:12px;display:grid;gap:12px;grid-template-columns:repeat(4,1fr);max-
 .c-ok{background:var(--green2);color:var(--green)}.c-full{background:var(--red2);color:var(--red)}.c-wait{background:var(--line);color:var(--mute)}
 .nums{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
 .n{text-align:center;font-size:12px;font-weight:700;padding:3px 0;border-radius:5px;background:#eef1ee;color:#b9c2bb}
-.n.f{background:var(--green);color:#fff}.n.new{background:var(--gold);color:#3a2600;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--gold)}
+.n.f{background:var(--green);color:#fff}.n.new{background:#ffe23a;color:#3a2e00;box-shadow:0 0 0 2px #fff,0 0 0 4px #e6c200}.n.gone{background:var(--red);color:#fff;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--red)}
 .n.me{background:var(--blue);color:#fff}
 .note{font-size:11px;color:var(--mute);margin-top:4px}
 footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
@@ -40,7 +40,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
   <span class="pill p-open">Prochaine ouverture : <b id="nextopen">–</b></span>
   <a class="pill p-tab" href="./">↔ Tableau de bord</a>
 </header>
-<div id="legend"><span><i class="sw" style="background:var(--green)"></i>numéro libre</span><span><i class="sw" style="background:var(--gold)"></i>libéré depuis le relevé précédent</span><span><i class="sw" style="background:var(--blue)"></i>déjà à N ou L</span><span><i class="sw" style="background:#eef1ee"></i>pris</span></div>
+<div id="legend"><span><i class="sw" style="background:var(--green)"></i>numéro libre</span><span><i class="sw" style="background:#ffe23a"></i>vient de se libérer</span><span><i class="sw" style="background:var(--red)"></i>vient d'être pris</span><span><i class="sw" style="background:var(--blue)"></i>déjà à N ou L</span><span><i class="sw" style="background:#eef1ee"></i>pris</span></div>
 </div>
 <main id="days"><div class="empty">En attente du premier relevé du profil observateur…</div></main>
 <footer>Relevé en continu par un profil observateur (environ une minute par tour), publié seulement quand quelque chose change, et au moins toutes les 30 minutes. Places N et L : point de départ du dernier contrôle, puis réservations et annulations reçues en direct.</footer>
@@ -73,8 +73,8 @@ function render(){
     const rows=!z.x?`<div class="slot"><span class="cnt c-err">lecture impossible à ce tour</span></div>`:Object.keys(z.x).map(t=>{const v=z.x[t];
       let c; if(Array.isArray(v)) c=v.length?`<span class="cnt c-ok">${v.length}/12 libres</span>`:`<span class="cnt c-full">complet</span>`;
       else c=v==="absent"?`<span class="cnt c-full">complet</span>`:v==="bientôt"?`<span class="cnt c-soon">pas encore ouvert</span>`:v==="fermé"?`<span class="cnt c-wait">fermé</span>`:`<span class="cnt c-err">?</span>`;
-      const free=Array.isArray(v)?v:[]; const old=(pv[z.d]&&Array.isArray(pv[z.d][t]))?pv[z.d][t]:null;
-      const nums=Array.from({length:12},(_,i)=>i+1).map(n=>`<div class="n${me.includes(n)&&!free.includes(n)&&t===z.s?" me":free.includes(n)?(old&&!old.includes(n)?" new":" f"):""}">${pad(n)}</div>`).join("");
+      const free=Array.isArray(v)?v:[]; const ov=pv[z.d]?pv[z.d][t]:undefined; const old=Array.isArray(ov)?ov:(ov==="absent"?[]:null);
+      const nums=Array.from({length:12},(_,i)=>i+1).map(n=>`<div class="n${me.includes(n)&&!free.includes(n)&&t===z.s?" me":free.includes(n)?(old&&!old.includes(n)?" new":" f"):(old&&old.includes(n)?" gone":"")}">${pad(n)}</div>`).join("");
       return `<div class="slot"><div class="st"><b>${t}</b>${c}</div><div class="nums">${nums}</div></div>`;}).join("");
     return `<section class="day"><div class="dh"><b>${dfr(z.d)}</b><span>séance de ${z.s}</span></div><div class="held">Places actuelles : <b>${held}</b></div>${rows}</section>`;}).join("");
 }
@@ -90,6 +90,6 @@ setInterval(()=>{const o=nextOpening(); $("nextopen").textContent=o?o.toLocaleSt
 if(location.hash==="#demo"){ $("demob").style.display="block"; $("cstat").textContent="démo";
   const t=Date.now()-65000; const A=(a)=>a;
   prev={v:1,by:"nat7",t:t-60000,days:[{d:"2026-11-03",s:"14:00",x:{"14:00":"absent","14:15":"absent","14:30":[9],"14:45":[3,7,11]}},{d:"2026-11-04",s:"14:00",x:{"14:00":"absent","14:15":[],"14:30":[2,6,8,12],"14:45":[1,2,3,4,5,6,7,8,9,10,11,12]}},{d:"2026-11-05",s:"14:00",x:{"14:00":"absent","14:15":"absent","14:30":[6,8,12],"14:45":[1,2,3,4,5,6,7,8,9,10,11,12]}},{d:"2026-11-07",s:"10:00",x:{"10:00":"absent","10:15":"absent","10:30":[],"10:45":[2,9]}}]};
-  cur=JSON.parse(JSON.stringify(prev)); cur.t=t; cur.days[1].x["14:15"]=[12]; cur.days[3].x["10:30"]=[5]; render();
+  cur=JSON.parse(JSON.stringify(prev)); cur.t=t; cur.days[1].x["14:15"]=[12]; cur.days[3].x["10:30"]=[5]; cur.days[1].x["14:30"]=[2,8]; cur.days[0].x["14:45"]=[3,11]; render();
 } else connect();
 </script></body></html>
