@@ -6,7 +6,11 @@
 header{background:linear-gradient(135deg,#0f1f2e,#173b2c);color:#fff;padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px 8px;justify-content:center;text-align:center;border-bottom:3px solid var(--gold)}
 header h1{margin:0 0 2px;font-size:19px;width:100%;display:flex;justify-content:center;align-items:center;gap:8px}
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;color:#fff;font-size:12.5px;font-weight:600;white-space:nowrap;border:1px solid rgba(255,255,255,.15)}
-.p-conn{background:#24313f}.p-upd{background:#3b4656}.p-open{background:#b45309}.p-tab{background:#1d4ed8;text-decoration:none}.p-old{background:#b3261e!important}
+.p-conn{background:#24313f}.p-upd{background:#3b4656}.p-open{background:#b45309}.p-tab{background:#1d4ed8;text-decoration:none}.p-old{background:#b3261e!important}.p-rpl{background:#0f766e;text-decoration:none}.p-rpl.cur{background:#f59e0b;color:#1a1a1a}
+#rbar{display:none;background:#0f766e;color:#fff;padding:6px 12px;gap:6px 8px;flex-wrap:wrap;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+#rbar button{background:#134e4a;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:3px 10px;font-weight:700;cursor:pointer}#rbar button.on{background:#f59e0b;color:#1a1a1a}
+#rmore a{color:#fff;margin:0 4px;font-weight:700}#rmore a.on{color:#fde68a;text-decoration:none}
+#rbar .rprog{flex:1 1 160px;max-width:320px;height:6px;background:rgba(255,255,255,.25);border-radius:3px;overflow:hidden}#rbar .rprog i{display:block;height:100%;background:#fde68a;width:0}
 .dot{width:9px;height:9px;border-radius:50%;background:#7dff9c;box-shadow:0 0 6px #7dff9c;display:inline-block}
 #legend{background:var(--card);border-bottom:1px solid var(--line);padding:6px 12px;display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;font-size:12px;color:var(--mute)}
 .sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
@@ -46,7 +50,10 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
   <span class="pill p-upd" id="upd">en attente du premier relevé…</span>
   <span class="pill p-open">Prochaine ouverture : <b id="nextopen">–</b></span>
   <a class="pill p-tab" href="./">↔ Tableau de bord</a>
+  <span id="rpls"></span>
 </header>
+<div id="rbar"><span id="rtitle">Rejouer</span><span>⏱ <b id="rclock">–</b></span><span class="rprog"><i id="rprog"></i></span>
+  <button id="rpause">⏸</button><button data-sp="1">×1</button><button data-sp="4" class="on">×4</button><button data-sp="10">×10</button><button id="rexit">✕ Retour au direct</button><span id="rmore" style="width:100%;text-align:center;font-weight:400"></span></div>
 <div id="legend"><span><i class="sw" style="background:var(--green)"></i>numéro libre</span><span><i class="sw" style="background:#ffe23a"></i>vient de se libérer</span><span><i class="sw" style="background:var(--red)"></i>vient d'être pris</span><span><i class="sw" style="background:var(--blue)"></i>déjà à N ou L</span><span><i class="sw" style="background:#eef1ee"></i>pris</span></div>
 </div>
 <main id="days"><div class="empty">En attente du premier relevé du profil observateur…</div></main>
@@ -82,7 +89,7 @@ function renderMoves(){ const L=MV.slice(-100).reverse(); $("mvc").textContent=L
   mvTop=top; }
 function render(){
   if(!cur) return; renderMoves();
-  const age=Math.round((Date.now()-cur.t)/1000);
+  const age=Math.round(((window.__vt||Date.now())-cur.t)/1000);
   const u=$("upd"); u.textContent="Relevé par "+cur.by+" à "+new Date(cur.t).toLocaleTimeString("fr-FR")+" · il y a "+(age<90?age+" s":Math.round(age/60)+" min");
   u.className="pill p-upd"+(age>2400?" p-old":"");
   const pv={}; if(prev) prev.days.forEach(z=>pv[z.d]=z.x||{});
@@ -105,10 +112,39 @@ function connect(){ try{ if(es) es.close(); }catch(e){}
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&(!es||es.readyState===2)) connect(); });
 window.addEventListener("hashchange",()=>location.reload());
 setInterval(()=>{const o=nextOpening(); $("nextopen").textContent=o?o.toLocaleString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"–"; render();},1000);
+/* ===== Rejouer une ouverture enregistrée (replays/*.json) ===== */
+const RPL=(location.hash.match(/^#replay=([\w-]+)/)||[])[1]||null;
+const rlabel=t=>new Date(t*1000).toLocaleString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+fetch("replays/index.json",{cache:"no-store"}).then(r=>r.ok?r.json():[]).then(list=>{
+  window.__RL=list; const dk=x=>new Date(x.first*1000).toLocaleDateString("fr-CA",{timeZone:"Europe/Paris"});
+  const byDay={}; list.forEach(x=>(byDay[dk(x)]=byDay[dk(x)]||[]).push(x));
+  const days=Object.keys(byDay).sort().reverse().slice(0,4);
+  const main=a=>a.slice().sort((p,q)=>(q.events-p.events)||(q.books-p.books)||(p.first-q.first))[0];
+  const curDay=RPL?(list.find(x=>x.id===RPL)||{}):{};
+  $("rpls").innerHTML=days.map((d,i)=>{ const m=main(byDay[d]); const on=curDay.id&&dk(curDay)===d;
+    return `<a class="pill p-rpl${on?" cur":""}" href="#replay=${m.id}" title="${byDay[d].length} moment(s) enregistré(s)">⏪ J-${i+1} <span style="font-weight:400">${new Date(m.first*1000).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"})}</span></a>`; }).join(" ");
+  if(curDay.id){ const same=byDay[dk(curDay)].slice().sort((p,q)=>p.first-q.first);
+    if(same.length>1) $("rmore").innerHTML="Autres moments du jour : "+same.map(x=>`<a href="#replay=${x.id}" class="${x.id===RPL?"on":""}">${new Date(x.first*1000).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</a>`).join(" "); }
+}).catch(()=>{});
+function replay(id){
+  $("cstat").textContent="REJOUER (rien n'est envoyé)"; $("rbar").style.display="flex";
+  $("rexit").onclick=()=>{ location.hash=""; location.reload(); };
+  fetch("replays/"+id+".json",{cache:"no-store"}).then(r=>r.json()).then(R=>{
+    $("rtitle").textContent="Rejouer : "+rlabel(R.first);
+    const M=R.msgs.slice().sort((a,b)=>a.time-b.time); let vt=R.start*1000, sp=4, i=0, last=Date.now();
+    const sb=v=>{ sp=v; document.querySelectorAll("#rbar [data-sp]").forEach(b=>b.classList.toggle("on",+b.dataset.sp===v)); $("rpause").classList.toggle("on",v===0); };
+    document.querySelectorAll("#rbar [data-sp]").forEach(b=>b.onclick=()=>sb(+b.dataset.sp)); $("rpause").onclick=()=>sb(sp?0:4);
+    setInterval(()=>{ const now=Date.now(); vt+=(now-last)*sp; last=now; if(vt>R.end*1000) vt=R.end*1000; window.__vt=vt;
+      while(i<M.length&&M[i].time*1000<=vt){ handle(Object.assign({event:"message"},M[i])); i++; }
+      $("rclock").textContent=new Date(vt).toLocaleTimeString("fr-FR");
+      $("rprog").style.width=Math.min(100,(vt-R.start*1000)/((R.end-R.start)*1000)*100)+"%";
+      if(vt>=R.end*1000&&i>=M.length) $("cstat").textContent="REJOUER : terminé"; render(); },100);
+  }).catch(()=>{ $("cstat").textContent="enregistrement introuvable"; });
+}
 if(location.hash==="#demo"){ $("demob").style.display="block"; $("cstat").textContent="démo";
   const t=Date.now()-65000; const A=(a)=>a;
   prev={v:1,by:"nat7",t:t-60000,days:[{d:"2026-11-03",s:"14:00",x:{"14:00":"absent","14:15":"absent","14:30":[9],"14:45":[3,7,11]}},{d:"2026-11-04",s:"14:00",x:{"14:00":"absent","14:15":[],"14:30":[2,6,8,12],"14:45":[1,2,3,4,5,6,7,8,9,10,11,12]}},{d:"2026-11-05",s:"14:00",x:{"14:00":"absent","14:15":"absent","14:30":[6,8,12],"14:45":[1,2,3,4,5,6,7,8,9,10,11,12]}},{d:"2026-11-07",s:"10:00",x:{"10:00":"absent","10:15":"absent","10:30":[],"10:45":[2,9]}}]};
   {const b=JSON.parse(JSON.stringify(prev)); const st=[[0,"14:30",[9,4]],[3,"10:15",[8]],[3,"10:15",[]],[1,"14:15",[3]],[1,"14:15",[]],[2,"14:30",[6,8,12,1]],[0,"14:45",[3,7,11,2]]]; let q=JSON.parse(JSON.stringify(prev)); q.t=t-3600000; let tt=q.t; for(const [i,h,v] of st){ const r=JSON.parse(JSON.stringify(q)); tt+=400000; r.t=tt; r.days[i].x[h]=v; addMoves(q,r); q=r; } addMoves(q,prev);}
   cur=JSON.parse(JSON.stringify(prev)); cur.t=t; cur.days[1].x["14:15"]=[12]; cur.days[3].x["10:30"]=[5]; cur.days[1].x["14:30"]=[2,8]; cur.days[0].x["14:45"]=[3,11]; addMoves(prev,cur); render();
-} else connect();
+} else if(RPL) replay(RPL); else connect();
 </script></body></html>
