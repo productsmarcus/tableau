@@ -10,11 +10,17 @@
 @media (prefers-color-scheme:dark){:root{--bg:#121714;--card:#1b221d;--ink:#e6efe8;--mute:#93a399;--line:#2c362f;--green:#5fbf7f;--green2:#1f3527;--orange:#f0a640;--orange2:#3a2c14;--red:#ff8a80;--red2:#3d1f1d;--blue:#8fb2ff;--blue2:#1d2a44}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
-header{position:sticky;top:0;z-index:5;background:var(--green);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+header{background:var(--green);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
 header h1{margin:0;font-size:18px;display:flex;align-items:center;gap:8px}
 .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.18);font-size:13px;white-space:nowrap}
 .dot{width:9px;height:9px;border-radius:50%;background:#bbb;display:inline-block}
 .dot.on{background:#7dff9c;box-shadow:0 0 6px #7dff9c}.dot.off{background:#ff8a80}
+#bar{position:sticky;top:0;z-index:6;background:var(--card);border-bottom:1px solid var(--line);padding:6px 12px 8px;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+#last{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px}
+.mini{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;max-width:900px}
+.mc{text-align:center;font-weight:700;font-size:13px;line-height:1.1;padding:4px 0 3px;border-radius:6px;background:var(--line);color:var(--mute)}
+.mc small{display:block;font-size:9px;font-weight:600;min-height:10px}
+.mc.act{background:var(--blue2);color:var(--blue)}.mc.won{background:var(--green);color:#fff}.mc.can{background:var(--red2);color:var(--red)}.mc.can b{text-decoration:line-through}
 main{padding:14px 16px 40px;display:grid;gap:14px;grid-template-columns:repeat(12,1fr);max-width:1500px;margin:0 auto}
 section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
 h2{margin:0 0 8px;font-size:15px}
@@ -49,6 +55,7 @@ tr.absent td{color:var(--mute);opacity:.6}
   <span class="pill">Prochaine ouverture : <b id="nextopen">–</b></span>
   <span class="pill">Messages reçus : <b id="nmsg">0</b></span>
 </header>
+<div id="bar"><div id="last"><span class="mute">En attente du premier message…</span></div><div class="mini" id="mini"></div></div>
 <main>
   <section class="span8"><h2>Course en cours – <span id="curdate" class="mute">aucune activité d'ouverture récente</span></h2>
     <div class="nums" id="nums"></div>
@@ -173,6 +180,11 @@ function render(){
   $("curdate").textContent = d ? "séance du " + dfr(d) : "aucune activité d'ouverture récente";
   $("nums").innerHTML = Array.from({length:12}, (_,i) => i+1).map(n => { const x = R && R[n];
     return `<div class="num${x&&x.won&&!x.cancelled?" won":""}"><small>Créneau</small><b>${pad(n)}</b>${x ? `<small>${x.choice.size} choisi · ${x.form.size} form.</small>${x.won?(x.cancelled?`<small><s>${x.won}</s> <span style="color:var(--red)">annulé</span></small>`:`<small><b style="font-size:12px;color:var(--green)">✔ ${x.won}</b></small>`):""}` : `<small>–</small>`}</div>`; }).join("");
+  // bandeau fixe : dernier message + 12 numéros
+  const f0 = feed[0]; if(f0) $("last").innerHTML = `<span class="mute">${hm(f0.t)}</span> <b>${f0.role}</b> · <span class="${f0.cls}">${esc(f0.txt)}</span>`;
+  $("mini").innerHTML = Array.from({length:12}, (_,i) => i+1).map(n => { const x = R && R[n]; const c = !x ? "" : x.won ? (x.cancelled ? " can" : " won") : (x.choice.size||x.form.size) ? " act" : "";
+    const sub = !x ? "" : x.won ? (x.cancelled ? "annulé" : x.won) : (x.form.size ? x.form.size+" form" : x.choice.size ? x.choice.size+" ch." : "");
+    return `<div class="mc${c}"><b>${pad(n)}</b><small>${sub}</small></div>`; }).join("");
   // historique
   $("hist").innerHTML = hist.slice(0,60).map(h => `<tr><td>${hm(h.t)}</td><td>${h.role}</td><td>${dfr(h.d)}</td><td>${pad(h.n)}</td><td class="${h.kind==="annulation"?"ev-cancel":"ev-book"}">${h.kind}${h.dry?" (blanc)":""}</td></tr>`).join("") || `<tr><td class="mute" colspan="5">Rien depuis 12 h.</td></tr>`;
   // fil
