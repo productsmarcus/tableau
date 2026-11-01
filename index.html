@@ -42,7 +42,7 @@ th{font-size:12px;color:var(--mute);font-weight:600;position:sticky;top:0;backgr
 tr.absent td{color:var(--mute);opacity:.6}
 .tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:12px;font-weight:600}
 .t-maison{background:var(--blue2);color:var(--blue)}.t-bureau{background:var(--orange2);color:var(--orange)}
-.t-reel{background:var(--green2);color:var(--green)}.t-blanc{background:var(--line);color:var(--mute)}
+.t-reel{background:var(--green2);color:var(--green)}.t-pause{background:var(--orange2);color:var(--orange)}.t-arr{background:var(--red2);color:var(--red)}.t-blanc{background:var(--line);color:var(--mute)}
 .ev-book{color:var(--green);font-weight:700}.ev-cancel{color:var(--red);font-weight:600}.ev-form{color:var(--blue)}.ev-choice{color:var(--ink)}.ev-alert{color:var(--orange);font-weight:600}
 .flash{animation:fl 2.5s ease-out}@keyframes fl{0%{background:#fff3b0}100%{background:transparent}}
 .mute{color:var(--mute)}
@@ -79,7 +79,7 @@ tr.absent td{color:var(--mute);opacity:.6}
     <div class="note" id="placesnote"></div>
   </section>
   <section class="span12"><h2>Profils (PC maison et PC bureau)</h2>
-    <div class="scroll"><table><thead><tr><th>Profil</th><th>PC</th><th class="hm">Compte</th><th>Cible</th><th>Mode</th><th class="hm">Démarré</th><th>Relance estimée</th><th>Dernière action (ntfy)</th><th>Heure</th><th class="hm">Actions reçues</th></tr></thead><tbody id="profs"></tbody></table></div>
+    <div class="scroll"><table><thead><tr><th>Profil</th><th>PC</th><th class="hm">Compte</th><th>Cible</th><th>Mode</th><th class="hm">Depuis</th><th>Relance estimée</th><th>Dernière action (ntfy)</th><th>Heure</th><th class="hm">Actions reçues</th></tr></thead><tbody id="profs"></tbody></table></div>
     <div class="note" id="snapnote"></div>
   </section>
   <section class="span6"><h2>Réservations, annulations et rattrapages</h2>
@@ -91,32 +91,32 @@ tr.absent td{color:var(--mute);opacity:.6}
 <script>
 "use strict";
 /* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
-const SNAP = { at: "2026-11-01T16:45:00+01:00", label: "contrôle du dim. 01/11 à 16:45" };
+const SNAP = { at: "2026-11-01T23:55:00+01:00", label: "état relevé par Claude le dim. 01/11 à 23:55" };
 const P = [
- // profil, pc, compte, cible, version, réel?, démarré (ISO), relance (min), existe?
- ["nat1","maison","N","01","v22l",1,"2026-11-01T17:53:00+01:00",84,1],
- ["nat5","maison","N","01","v22l",1,"2026-11-01T17:53:00+01:00",108,1],
- ["lal1","maison","L","01","v22l",1,"2026-11-01T17:53:00+01:00",92,1],
+ // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
+ ["nat1","maison","N","01","v22l","pause","2026-11-01T23:54:02+01:00",84,1],
+ ["nat5","maison","N","01","v22l","pause","2026-11-01T23:53:55+01:00",108,1],
+ ["lal1","maison","L","01","v22l","pause","2026-11-01T23:54:28+01:00",92,1],
  ["obs1","bureau","N","observateur (relevé des créneaux)","v22m.2",0,"2026-11-01T17:38:48+01:00",140,1],
- ["nat7","bureau","N","01","v22m.2",1,"2026-11-01T17:48:28+01:00",112,1],
- ["nat8","bureau","N","01","v22l",1,"2026-11-01T17:48:30+01:00",114,1],["nat9","bureau","N","01","v22l",1,"2026-11-01T17:48:32+01:00",116,1],["nat10","bureau","N","01","v22l",1,"2026-11-01T17:48:33+01:00",118,1],
- ["lal5","bureau","L","01","v22l",1,"2026-11-01T21:00:11+01:00",120,1],["lal6","bureau","L","01","v22l",1,"2026-11-01T21:00:09+01:00",122,1],["lal7","bureau","L","01","v22l",1,"2026-11-01T21:00:08+01:00",124,1],
- ["nat2","maison","N","02","v22l",1,"2026-11-01T17:53:00+01:00",86,1],
- ["nat6","maison","N","02","v22l",1,"2026-11-01T17:53:00+01:00",110,1],
- ["lal2","maison","L","02","v22l",1,"2026-11-01T17:54:52+01:00",94,1],
- ["nat11","bureau","N","02","v22l",1,"2026-11-01T17:48:35+01:00",126,1],["nat12","bureau","N","02","v22l",1,"2026-11-01T17:48:37+01:00",128,1],["nat13","bureau","N","02","v22l",1,"2026-11-01T17:48:39+01:00",130,1],
- ["lal8","bureau","L","02","v22l",1,"2026-11-01T21:00:06+01:00",132,1],["lal9","bureau","L","02","v22l",1,"2026-11-01T21:00:05+01:00",134,1],["lal10","bureau","L","02","v22l",1,"2026-11-01T21:52:34+01:00",136,1],["lal11","bureau","L","02","v22l",1,"2026-11-01T21:52:12+01:00",138,1],
- ["nat3","maison","N","03","v22l",1,"2026-11-01T17:53:00+01:00",88,1],
- ["lal3","maison","L","03","v22l",1,"2026-11-01T17:53:00+01:00",96,1],
+ ["nat7","bureau","N","01","v22m.2","pause","2026-11-01T23:53:39+01:00",112,1],
+ ["nat8","bureau","N","01","v22l","pause","2026-11-01T23:53:32+01:00",114,1],["nat9","bureau","N","01","v22l","pause","2026-11-01T23:53:24+01:00",116,1],["nat10","bureau","N","01","v22l","pause","2026-11-01T23:53:18+01:00",118,1],
+ ["lal5","bureau","L","01","v22l","pause","2026-11-01T23:52:55+01:00",120,1],["lal6","bureau","L","01","v22l","pause","2026-11-01T23:52:49+01:00",122,1],["lal7","bureau","L","01","v22l","pause","2026-11-01T23:52:44+01:00",124,1],
+ ["nat2","maison","N","02","v22l","pause","2026-11-01T23:54:09+01:00",86,1],
+ ["nat6","maison","N","02","v22l","pause","2026-11-01T23:53:47+01:00",110,1],
+ ["lal2","maison","L","02","v22l","pause","2026-11-01T23:54:35+01:00",94,1],
+ ["nat11","bureau","N","02","v22l","pause","2026-11-01T23:53:12+01:00",126,1],["nat12","bureau","N","02","v22l","pause","2026-11-01T23:53:06+01:00",128,1],["nat13","bureau","N","02","v22l","pause","2026-11-01T23:53:01+01:00",130,1],
+ ["lal8","bureau","L","02","v22l","pause","2026-11-01T23:52:38+01:00",132,1],["lal9","bureau","L","02","v22l","pause","2026-11-01T23:52:32+01:00",134,1],["lal10","bureau","L","02","v22l","pause","2026-11-01T23:52:26+01:00",136,1],["lal11","bureau","L","02","v22l","pause","2026-11-01T23:52:20+01:00",138,1],
+ ["nat3","maison","N","03","v22l","pause","2026-11-01T23:54:15+01:00",88,1],
+ ["lal3","maison","L","03","v22l","pause","2026-11-01T23:54:41+01:00",96,1],
  ["gnat1","maison","N","ouv. 03/04 · rattr. samedi","v22l",1,"2026-11-01T17:53:00+01:00",100,1],
- ["gnat2","maison","N","ouv. 03/04 · rattr. mardi","v22l",1,"2026-11-01T17:53:00+01:00",102,1],
- ["gnat3","maison","N","ouv. 03/04 · rattr. mercredi","v22l",1,"2026-11-01T17:53:00+01:00",104,1],
- ["gnat4","maison","N","ouv. 03/04 · rattr. jeudi","v22l",1,"2026-11-01T17:53:00+01:00",106,1],
- ["nat4","maison","N","05 à 12","v22l",1,"2026-11-01T17:53:00+01:00",90,1],
- ["lal4","maison","L","05 à 12","v22l",1,"2026-11-01T17:53:00+01:00",98,1]
+ ["gnat2","maison","N","ouv. 03/04 · rattr. mardi","v22l",1,"2026-11-01T22:59:55+01:00",102,1],
+ ["gnat3","maison","N","ouv. 03/04 · rattr. mercredi","v22l",1,"2026-11-01T23:32:10+01:00",104,1],
+ ["gnat4","maison","N","ouv. 03/04 · rattr. jeudi","v22l",1,"2026-11-01T23:12:00+01:00",106,1],
+ ["nat4","maison","N","05 à 12","v22l","pause","2026-11-01T23:54:21+01:00",90,1],
+ ["lal4","maison","L","05 à 12","v22l","pause","2026-11-01T23:54:47+01:00",98,1]
 ];
 const PLACES0 = { // places au moment du contrôle
- "2026-11-03":{N:[4],L:[5]}, "2026-11-04":{N:[10],L:[4]}, "2026-11-05":{N:[],L:[4]}, "2026-11-07":{N:[10],L:[8]}
+ "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[7],L:[4]}, "2026-11-05":{N:[5],L:[4]}, "2026-11-07":{N:[10],L:[8]}
 };
 const OPEN = {2:"14:00",3:"14:00",4:"14:00",6:"10:00"}; // jours de séance (mar, mer, jeu, sam)
 
@@ -194,14 +194,15 @@ function handle(m){
 
 let pending = false; function schedule(){ if(!pending){ pending = true; requestAnimationFrame(() => { pending = false; render(); }); } }
 
-function nextReload(p){ if(!p[6]) return null; const st = Date.parse(p[6]), per = p[7]*60000; let n = st + per; while(n < Date.now()) n += per; return n; }
+const MODE = {1:["t-reel","réel"],0:["t-blanc","à blanc"],pause:["t-pause","en pause"],arrete:["t-arr","arrêté"]};
+function nextReload(p){ if(!p[6]||p[5]==="pause"||p[5]==="arrete") return null; const st = Date.parse(p[6]), per = p[7]*60000; let n = st + per; while(n < Date.now()) n += per; return n; }
 
 function render(){
   $("nmsg").textContent = nmsg;
   // profils
   $("profs").innerHTML = P.map(p => { const s = prof[p[0]], nr = nextReload(p); const fl = s.flash && Date.now()-s.flash < 2500 ? " flash" : "";
     return `<tr class="${p[8]?"":"absent"}${fl}"><td><b>${p[0]}</b></td><td><span class="tag t-${p[1]}">PC ${p[1]}</span></td><td class="hm">${p[2]}</td><td>${esc(p[3])}</td>`+
-      `<td>${p[8] ? `<span class="tag ${p[5]?"t-reel":"t-blanc"}">${p[5]?"réel":"à blanc"}</span> <span class="mute">${p[4]}</span>` : `<span class="mute">pas encore créé</span>`}</td>`+
+      `<td>${p[8] ? `<span class="tag ${MODE[p[5]][0]}">${MODE[p[5]][1]}</span> <span class="mute">${p[4]}</span>` : `<span class="mute">pas encore créé</span>`}</td>`+
       `<td class="hm">${p[6] ? hm(Date.parse(p[6])).slice(0,5) : "–"}</td><td>${nr ? hm(nr).slice(0,5) + ` <span class="mute">(dans ${Math.round((nr-Date.now())/60000)} min)</span>` : "–"}</td>`+
       `<td class="${s.cls||""}">${esc(s.last||"")}</td><td>${s.lastT ? hm(s.lastT) : ""}</td><td class="hm">${s.n||""}</td></tr>`; }).join("");
   $("snapnote").textContent = "Mode, démarrage et relance : " + SNAP.label + " (relance estimée d'après le cycle de chaque profil). Dernière action : en direct depuis ntfy (messages des 12 dernières heures).";
