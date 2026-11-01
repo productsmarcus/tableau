@@ -6,7 +6,7 @@
 header{background:linear-gradient(135deg,#0f1f2e,#173b2c);color:#fff;padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px 8px;justify-content:center;text-align:center;border-bottom:3px solid var(--gold)}
 header h1{margin:0 0 2px;font-size:19px;width:100%;display:flex;justify-content:center;align-items:center;gap:8px}
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;color:#fff;font-size:12.5px;font-weight:600;white-space:nowrap;border:1px solid rgba(255,255,255,.15)}
-.p-conn{background:#24313f}.p-upd{background:#3b4656}.p-open{background:#b45309}.p-tab{background:#1d4ed8;text-decoration:none}.p-old{background:#b3261e!important}.p-rpl{background:#0f766e;text-decoration:none}.p-rpl.cur{background:#f59e0b;color:#1a1a1a}
+.p-conn{background:#24313f}.p-upd{background:#3b4656}.p-open{background:#b45309}.p-tab{background:#1d4ed8;text-decoration:none}.p-old{background:#b3261e!important}.p-idle{background:#4b5563;font-variant-numeric:tabular-nums}.p-idle.fresh{background:#f59e0b;color:#1a1a1a}.p-idle.fresh b{color:#1a1a1a}.p-rpl{background:#0f766e;text-decoration:none}.p-rpl.cur{background:#f59e0b;color:#1a1a1a}
 #rbar{display:none;background:#0f766e;color:#fff;padding:6px 12px;gap:6px 8px;flex-wrap:wrap;align-items:center;justify-content:center;font-size:13px;font-weight:600}
 #rbar button{background:#134e4a;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:3px 10px;font-weight:700;cursor:pointer}#rbar button.on{background:#f59e0b;color:#1a1a1a}
 #rmore a{color:#fff;margin:0 4px;font-weight:700}#rmore a.on{color:#fde68a;text-decoration:none}
@@ -49,6 +49,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
   <span class="pill p-conn"><span class="dot" id="cdot"></span><span id="cstat">connexion…</span></span>
   <span class="pill p-upd" id="upd">en attente du premier relevé…</span>
   <span class="pill p-open">Prochaine ouverture : <b id="nextopen">–</b></span>
+  <span class="pill p-idle" id="idlep">⏳ Sans mouvement depuis <b id="idle">–</b></span>
   <a class="pill p-tab" href="./">↔ Tableau de bord</a>
   <span id="rpls"></span>
 </header>
@@ -87,7 +88,11 @@ function renderMoves(){ const L=MV.slice(-100).reverse(); $("mvc").textContent=L
   const txt=m=>dfr(m.d).replace(".","")+" "+m.h+" · <b>"+m.n.map(pad).join(" ")+"</b>";
   $("mvl").innerHTML=L.map((m,i)=>`<div class="r${i===0&&mvTop!==null&&top!==mvTop?" nw":""}"><div class="tm">${new Date(m.t).toLocaleTimeString("fr-FR")}</div><div class="${m.k==="lib"?"lib":""}">${m.k==="lib"?txt(m):""}</div><div class="${m.k==="pri"?"pri":""}">${m.k==="pri"?txt(m):""}</div></div>`).join("");
   mvTop=top; }
-function render(){
+function renderIdle(){ const now=window.__vt||Date.now(); const last=MV.length?MV[MV.length-1].t:null; const el=$("idle"), pl=$("idlep");
+  if(!last){ el.textContent="plus de 12 h"; pl.className="pill p-idle"; return; }
+  const d=Math.max(0,Math.floor((now-last)/1000)); el.textContent=pad(Math.floor(d/3600))+":"+pad(Math.floor(d%3600/60))+":"+pad(d%60);
+  pl.className="pill p-idle"+(d<20?" fresh":""); pl.title="Dernier mouvement : "+new Date(last).toLocaleTimeString("fr-FR"); }
+function render(){ renderIdle();
   if(!cur) return; renderMoves();
   const age=Math.round(((window.__vt||Date.now())-cur.t)/1000);
   const u=$("upd"); u.textContent="Relevé par "+cur.by+" à "+new Date(cur.t).toLocaleTimeString("fr-FR")+" · il y a "+(age<90?age+" s":Math.round(age/60)+" min");
