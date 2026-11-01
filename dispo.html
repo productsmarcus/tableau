@@ -1,0 +1,95 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Créneaux disponibles</title>
+<style>
+:root{--bg:#f4f6f3;--card:#fff;--ink:#1d2a22;--mute:#6b7a70;--line:#dfe5df;--green:#2f7d4a;--green2:#e3f2e8;--red:#b3261e;--red2:#fde4e2;--blue:#1d4ed8;--blue2:#e3ecfb;--gold:#e9a93a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+#top{position:sticky;top:0;z-index:5}
+header{background:linear-gradient(135deg,#0f1f2e,#173b2c);color:#fff;padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px 8px;justify-content:center;text-align:center;border-bottom:3px solid var(--gold)}
+header h1{margin:0 0 2px;font-size:19px;width:100%;display:flex;justify-content:center;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;color:#fff;font-size:12.5px;font-weight:600;white-space:nowrap;border:1px solid rgba(255,255,255,.15)}
+.p-conn{background:#24313f}.p-upd{background:#3b4656}.p-open{background:#b45309}.p-tab{background:#1d4ed8;text-decoration:none}.p-old{background:#b3261e!important}
+.dot{width:9px;height:9px;border-radius:50%;background:#7dff9c;box-shadow:0 0 6px #7dff9c;display:inline-block}
+#legend{background:var(--card);border-bottom:1px solid var(--line);padding:6px 12px;display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;font-size:12px;color:var(--mute)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+main{padding:12px;display:grid;gap:12px;grid-template-columns:repeat(4,1fr);max-width:1400px;margin:0 auto}
+@media (max-width:900px){main{grid-template-columns:1fr}}
+.day{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.dh{padding:8px 12px;background:#173b2c;color:#fff;display:flex;justify-content:space-between;align-items:baseline}
+.dh b{font-size:16px}.dh span{font-size:12px;opacity:.85}
+.held{padding:6px 12px;font-size:12px;background:#fff8e6;border-bottom:1px solid var(--line)}
+.held b{color:var(--green)}
+.slot{padding:8px 12px;border-bottom:1px solid var(--line)}
+.slot:last-child{border-bottom:0}
+.st{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.st b{font-size:15px}.cnt{font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px}
+.c-ok{background:var(--green2);color:var(--green)}.c-full{background:var(--red2);color:var(--red)}.c-wait{background:var(--line);color:var(--mute)}
+.nums{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
+.n{text-align:center;font-size:12px;font-weight:700;padding:3px 0;border-radius:5px;background:#eef1ee;color:#b9c2bb}
+.n.f{background:var(--green);color:#fff}.n.new{background:var(--gold);color:#3a2600;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--gold)}
+.n.me{background:var(--blue);color:#fff}
+.note{font-size:11px;color:var(--mute);margin-top:4px}
+footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
+.demo{background:#7c3aed;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:3px}
+.cnt.c-soon{background:#e3ecfb;color:#1d4ed8}.cnt.c-err{background:#fde4e2;color:#b3261e}
+.dot.off{background:#ff8a80;box-shadow:0 0 6px #ff8a80}.empty{grid-column:1/-1;text-align:center;color:var(--mute);padding:30px}</style></head><body>
+<div id="top">
+<div class="demo" id="demob" style="display:none">MODE DÉMO – données fictives</div>
+<header>
+  <h1><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 21V8" stroke="#ffe08a" stroke-width="2" stroke-linecap="round"/><g fill="#ffe08a"><ellipse cx="12" cy="6" rx="2" ry="3.5"/><ellipse cx="9.3" cy="10" rx="1.8" ry="3.2" transform="rotate(-32 9.3 10)"/><ellipse cx="14.7" cy="10" rx="1.8" ry="3.2" transform="rotate(32 14.7 10)"/><ellipse cx="9.3" cy="14.5" rx="1.8" ry="3.2" transform="rotate(-32 9.3 14.5)"/><ellipse cx="14.7" cy="14.5" rx="1.8" ry="3.2" transform="rotate(32 14.7 14.5)"/></g></svg>Créneaux disponibles</h1>
+  <span class="pill p-conn"><span class="dot" id="cdot"></span><span id="cstat">connexion…</span></span>
+  <span class="pill p-upd" id="upd">en attente du premier relevé…</span>
+  <span class="pill p-open">Prochaine ouverture : <b id="nextopen">–</b></span>
+  <a class="pill p-tab" href="./">↔ Tableau de bord</a>
+</header>
+<div id="legend"><span><i class="sw" style="background:var(--green)"></i>numéro libre</span><span><i class="sw" style="background:var(--gold)"></i>libéré depuis le relevé précédent</span><span><i class="sw" style="background:var(--blue)"></i>déjà à N ou L</span><span><i class="sw" style="background:#eef1ee"></i>pris</span></div>
+</div>
+<main id="days"><div class="empty">En attente du premier relevé du profil observateur…</div></main>
+<footer>Relevé en continu par un profil observateur (environ une minute par tour), publié seulement quand quelque chose change, et au moins toutes les 30 minutes. Places N et L : point de départ du dernier contrôle, puis réservations et annulations reçues en direct.</footer>
+<script>
+"use strict";
+const SNAP={at:"2026-11-01T11:21:00+01:00"};
+const PLACES0={"2026-11-03":{N:[4],L:[5]},"2026-11-04":{N:[10],L:[4]},"2026-11-05":{N:[],L:[4]},"2026-11-07":{N:[10],L:[8]}};
+const OPEN={2:"14:00",3:"14:00",4:"14:00",6:"10:00"};
+const $=id=>document.getElementById(id); const pad=n=>String(n).padStart(2,"0");
+const places=JSON.parse(JSON.stringify(PLACES0)); const snapT=Date.parse(SNAP.at);
+let cur=null, prev=null, es=null, lastId=null; const seen=new Set();
+const dfr=k=>{const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"});};
+const parseTag=s=>{const m=String(s||"").match(/#lg ([^\n]+)/); if(!m) return null; const o={}; m[1].split(" ").forEach(kv=>{const i=kv.indexOf("="); if(i>0) o[kv.slice(0,i)]=kv.slice(i+1);}); if(o.n!=null) o.n=+o.n; if(o.t) o.t=+o.t; return o;};
+function handle(m){
+  if(!m||m.event!=="message"||seen.has(m.id)) return; seen.add(m.id); lastId=m.id;
+  if(m.topic==="laressourcerie-dispo"){ try{ const x=JSON.parse(m.message); if(!cur||x.t>=cur.t){ prev=cur; cur=x; } }catch(e){} }
+  else { const g=parseTag(m.message); if(g&&(g.e==="book"||g.e==="cancel")&&g.d&&g.n!=null&&!g.dry&&(g.p==="N"||g.p==="L")&&(g.t||0)>snapT){
+      const pl=places[g.d]||(places[g.d]={N:[],L:[]}); const a=pl[g.p];
+      if(g.e==="book"&&!a.includes(g.n)) a.push(g.n); if(g.e==="cancel"){ const i=a.indexOf(g.n); if(i>=0) a.splice(i,1);} } }
+  render();
+}
+function render(){
+  if(!cur) return;
+  const age=Math.round((Date.now()-cur.t)/1000);
+  const u=$("upd"); u.textContent="Relevé par "+cur.by+" à "+new Date(cur.t).toLocaleTimeString("fr-FR")+" · il y a "+(age<90?age+" s":Math.round(age/60)+" min");
+  u.className="pill p-upd"+(age>2400?" p-old":"");
+  const pv={}; if(prev) prev.days.forEach(z=>pv[z.d]=z.x||{});
+  $("days").innerHTML=cur.days.map(z=>{const pl=places[z.d]||{N:[],L:[]}; const me=[...pl.N,...pl.L];
+    const held="N : "+(pl.N.length?pl.N.map(pad).join(", "):"–")+" · L : "+(pl.L.length?pl.L.map(pad).join(", "):"–");
+    const rows=!z.x?`<div class="slot"><span class="cnt c-err">lecture impossible à ce tour</span></div>`:Object.keys(z.x).map(t=>{const v=z.x[t];
+      let c; if(Array.isArray(v)) c=v.length?`<span class="cnt c-ok">${v.length}/12 libres</span>`:`<span class="cnt c-full">complet</span>`;
+      else c=v==="absent"?`<span class="cnt c-full">complet</span>`:v==="bientôt"?`<span class="cnt c-soon">pas encore ouvert</span>`:v==="fermé"?`<span class="cnt c-wait">fermé</span>`:`<span class="cnt c-err">?</span>`;
+      const free=Array.isArray(v)?v:[]; const old=(pv[z.d]&&Array.isArray(pv[z.d][t]))?pv[z.d][t]:null;
+      const nums=Array.from({length:12},(_,i)=>i+1).map(n=>`<div class="n${me.includes(n)&&!free.includes(n)&&t===z.s?" me":free.includes(n)?(old&&!old.includes(n)?" new":" f"):""}">${pad(n)}</div>`).join("");
+      return `<div class="slot"><div class="st"><b>${t}</b>${c}</div><div class="nums">${nums}</div></div>`;}).join("");
+    return `<section class="day"><div class="dh"><b>${dfr(z.d)}</b><span>séance de ${z.s}</span></div><div class="held">Places actuelles : <b>${held}</b></div>${rows}</section>`;}).join("");
+}
+function nextOpening(){const now=new Date(); for(let i=0;i<15;i++){const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i); if(!OPEN[d.getDay()]) continue; const [h,m]=OPEN[d.getDay()].split(":").map(Number); const op=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,m-1); if(op>now) return op;} return null;}
+function connect(){ try{ if(es) es.close(); }catch(e){}
+  es=new EventSource("https://ntfy.sh/laressourcerie-dispo,laressourcerie/sse?since="+encodeURIComponent(lastId||"12h"));
+  es.onopen=()=>{$("cdot").className="dot"; $("cstat").textContent="en direct";};
+  es.onmessage=e=>{try{handle(JSON.parse(e.data));}catch(x){}};
+  es.onerror=()=>{$("cdot").className="dot off"; $("cstat").textContent="reconnexion…"; try{es.close();}catch(e){} setTimeout(connect,5000);}; }
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&(!es||es.readyState===2)) connect(); });
+window.addEventListener("hashchange",()=>location.reload());
+setInterval(()=>{const o=nextOpening(); $("nextopen").textContent=o?o.toLocaleString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"–"; render();},1000);
+if(location.hash==="#demo"){ $("demob").style.display="block"; $("cstat").textContent="démo";
+  const t=Date.now()-65000; const A=(a)=>a;
+  prev={v:1,by:"nat7",t:t-60000,days:[{d:"2026-11-03",s:"14:00",x:{"14:00":"absent","14:15":"absent","14:30":[9],"14:45":[3,7,11]}},{d:"2026-11-04",s:"14:00",x:{"14:00":"absent","14:15":[],"14:30":[2,6,8,12],"14:45":[1,2,3,4,5,6,7,8,9,10,11,12]}},{d:"2026-11-05",s:"14:00",x:{"14:00":"absent","14:15":"absent","14:30":[6,8,12],"14:45":[1,2,3,4,5,6,7,8,9,10,11,12]}},{d:"2026-11-07",s:"10:00",x:{"10:00":"absent","10:15":"absent","10:30":[],"10:45":[2,9]}}]};
+  cur=JSON.parse(JSON.stringify(prev)); cur.t=t; cur.days[1].x["14:15"]=[12]; cur.days[3].x["10:30"]=[5]; render();
+} else connect();
+</script></body></html>
