@@ -54,6 +54,7 @@ tr.absent td{color:var(--mute);opacity:.6}
   <span class="pill">⏱ <span id="clock">–</span></span>
   <span class="pill">Prochaine ouverture : <b id="nextopen">–</b></span>
   <span class="pill">Messages reçus : <b id="nmsg">0</b></span>
+  <a class="pill" id="demobtn" href="#demo" style="color:#fff;text-decoration:none;font-weight:700">▶ Démo</a>
 </header>
 <div id="bar"><div id="last"><span class="mute">En attente du premier message…</span></div><div class="mini" id="mini"></div></div>
 <main>
@@ -228,6 +229,7 @@ function demo(){
   E(30, "cancel", "N", "nat3", 3); E(32, "cancel", "N", "gnat3", 4); E(34, "cancel", "N", "nat4", 5); E(36, "cancel", "L", "lal4", 6);
   setTimeout(() => { $("cstat").textContent = "DÉMO TERMINÉE — recharge la page pour la rejouer"; }, 38000);
 }
+if(DEMO){ const b=$("demobtn"); b.textContent="◼ Retour au direct"; b.href="#"; b.onclick=e=>{ e.preventDefault(); location.hash=""; location.reload(); }; }
 render(); if(DEMO) demo(); else connect();
 </script>
 </body>
