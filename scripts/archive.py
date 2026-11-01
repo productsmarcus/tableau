@@ -73,10 +73,22 @@ def main():
         rid = loc.strftime("%Y-%m-%d_%H%M")
         path = os.path.join(OUT, rid + ".json")
         # suite : annulations (ou nouvelles réservations) plus tard dans les 12 h, pour les numéros réservés pendant le moment
-        booked = {(t.get("d"), t.get("n")) for t in (tag(m["message"]) or {} for m in g) if t.get("e") == "book"}
-        suite = [m for m in msgs if m["topic"] == "laressourcerie" and m["time"] > end
-                 and (tag(m["message"]) or {}).get("e") in ("cancel", "book")
-                 and ((tag(m["message"]) or {}).get("d"), (tag(m["message"]) or {}).get("n")) in booked]
+        open_ = set()                 # numéros réservés pendant le moment et pas encore annulés à la fin
+        for m in msgs:
+            if m["time"] > end:
+                break
+            if m["time"] < first or m["topic"] != "laressourcerie":
+                continue
+            t = tag(m["message"]) or {}
+            if t.get("e") == "book":
+                open_.add((t.get("d"), t.get("n")))
+            elif t.get("e") == "cancel":
+                open_.discard((t.get("d"), t.get("n")))
+        suite = []                    # leur première annulation ensuite (une seule par numéro)
+        for m in msgs:
+            t = tag(m["message"]) or {}
+            if m["time"] > end and m["topic"] == "laressourcerie" and t.get("e") == "cancel" and (t.get("d"), t.get("n")) in open_:
+                suite.append(m); open_.discard((t.get("d"), t.get("n")))
         if os.path.exists(path):      # déjà enregistré : on complète seulement la suite
             with open(path, encoding="utf-8") as f:
                 old = json.load(f)
