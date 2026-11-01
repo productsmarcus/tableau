@@ -131,14 +131,15 @@ function replay(id){
   $("rexit").onclick=()=>{ location.hash=""; location.reload(); };
   fetch("replays/"+id+".json",{cache:"no-store"}).then(r=>r.json()).then(R=>{
     $("rtitle").textContent="Rejouer : "+rlabel(R.first);
-    const M=R.msgs.slice().sort((a,b)=>a.time-b.time); let vt=R.start*1000, sp=4, i=0, last=Date.now();
+    const M=R.msgs.slice().sort((a,b)=>a.time-b.time).map(m=>Object.assign({_v:m.time*1000},m));
+    (R.suite||[]).forEach((m,k)=>M.push(Object.assign({_v:(R.end+2+2*k)*1000,_suite:true},m))); const END=(R.end+((R.suite||[]).length?2+2*R.suite.length:0))*1000; let vt=R.start*1000, sp=4, i=0, last=Date.now();
     const sb=v=>{ sp=v; document.querySelectorAll("#rbar [data-sp]").forEach(b=>b.classList.toggle("on",+b.dataset.sp===v)); $("rpause").classList.toggle("on",v===0); };
     document.querySelectorAll("#rbar [data-sp]").forEach(b=>b.onclick=()=>sb(+b.dataset.sp)); $("rpause").onclick=()=>sb(sp?0:4);
-    setInterval(()=>{ const now=Date.now(); vt+=(now-last)*sp; last=now; if(vt>R.end*1000) vt=R.end*1000; window.__vt=vt;
-      while(i<M.length&&M[i].time*1000<=vt){ handle(Object.assign({event:"message"},M[i])); i++; }
+    setInterval(()=>{ const now=Date.now(); vt+=(now-last)*sp; last=now; if(vt>END) vt=END; window.__vt=vt;
+      while(i<M.length&&M[i]._v<=vt){ if(M[i]._suite) $("rmore").innerHTML="Suite (plus tard) : "+new Date(M[i].time*1000).toLocaleTimeString("fr-FR")+" — "+((M[i].message||"").includes("e=cancel")?"annulation":"réservation"); handle(Object.assign({event:"message"},M[i])); i++; }
       $("rclock").textContent=new Date(vt).toLocaleTimeString("fr-FR");
-      $("rprog").style.width=Math.min(100,(vt-R.start*1000)/((R.end-R.start)*1000)*100)+"%";
-      if(vt>=R.end*1000&&i>=M.length) $("cstat").textContent="REJOUER : terminé"; render(); },100);
+      $("rprog").style.width=Math.min(100,(vt-R.start*1000)/(END-R.start*1000)*100)+"%";
+      if(vt>=END&&i>=M.length) $("cstat").textContent="REJOUER : terminé"; render(); },100);
   }).catch(()=>{ $("cstat").textContent="enregistrement introuvable"; });
 }
 if(location.hash==="#demo"){ $("demob").style.display="block"; $("cstat").textContent="démo";

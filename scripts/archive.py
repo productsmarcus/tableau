@@ -72,7 +72,22 @@ def main():
         loc = datetime.fromtimestamp(first, PARIS)
         rid = loc.strftime("%Y-%m-%d_%H%M")
         path = os.path.join(OUT, rid + ".json")
-        if os.path.exists(path):
+        # suite : annulations (ou nouvelles réservations) plus tard dans les 12 h, pour les numéros réservés pendant le moment
+        booked = {(t.get("d"), t.get("n")) for t in (tag(m["message"]) or {} for m in g) if t.get("e") == "book"}
+        suite = [m for m in msgs if m["topic"] == "laressourcerie" and m["time"] > end
+                 and (tag(m["message"]) or {}).get("e") in ("cancel", "book")
+                 and ((tag(m["message"]) or {}).get("d"), (tag(m["message"]) or {}).get("n")) in booked]
+        if os.path.exists(path):      # déjà enregistré : on complète seulement la suite
+            with open(path, encoding="utf-8") as f:
+                old = json.load(f)
+            have = {m["id"] for m in old.get("suite", [])}
+            more = [m for m in suite if m["id"] not in have]
+            if more:
+                old["suite"] = sorted(old.get("suite", []) + more, key=lambda m: m["time"])
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(old, f, ensure_ascii=False, separators=(",", ":"))
+                added += 1
+                print("suite complétée", rid, len(more))
             continue
         window = [m for m in msgs if start <= m["time"] <= end]
         before = [m for m in msgs if m["topic"] == "laressourcerie-dispo" and m["time"] < start]
@@ -82,7 +97,7 @@ def main():
         n_book = sum(1 for m in g if (tag(m["message"]) or {}).get("e") == "book")
         rec = {"id": rid, "start": start, "end": end, "first": first,
                "label": loc.strftime("%a %d/%m %H:%M"), "days": days,
-               "events": len(g), "books": n_book, "msgs": window}
+               "events": len(g), "books": n_book, "msgs": window, "suite": suite}
         with open(path, "w", encoding="utf-8") as f:
             json.dump(rec, f, ensure_ascii=False, separators=(",", ":"))
         added += 1

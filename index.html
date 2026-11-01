@@ -28,7 +28,7 @@ header h1{margin:0 0 2px;font-size:19px;display:flex;align-items:center;justify-
 .mini{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;max-width:900px}
 .mc{text-align:center;font-weight:700;font-size:13px;line-height:1.1;padding:4px 0 3px;border-radius:6px;background:var(--line);color:var(--mute)}
 .mc small{display:block;font-size:9px;font-weight:600;min-height:10px}
-.mc.act{background:var(--blue2);color:var(--blue)}.mc.won{background:#14532d;color:#fff}.mc.can{background:var(--red2);color:var(--red)}.mc.can b{text-decoration:line-through}
+.mc.act{background:#1e3a8a;color:#fff}.mc.won{background:#14532d;color:#fff}.mc.can{background:var(--red2);color:var(--red)}.mc.can b{text-decoration:line-through}
 main{padding:14px 16px 40px;display:grid;gap:14px;grid-template-columns:repeat(12,1fr);max-width:1500px;margin:0 auto}
 section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
 h2{margin:0 0 8px;font-size:15px}
@@ -48,7 +48,7 @@ tr.absent td{color:var(--mute);opacity:.6}
 .mute{color:var(--mute)}
 .nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
 .num{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
-.num b{display:block;font-size:20px}.num.won{background:#14532d;border-color:#14532d;color:#fff;box-shadow:0 2px 6px rgba(20,83,45,.35)}.num.won small{color:#d1fae5}.num.won small b{color:#fff!important}
+.num b{display:block;font-size:20px}.num.won{background:#14532d;border-color:#14532d;color:#fff;box-shadow:0 2px 6px rgba(20,83,45,.35)}.num.won small{color:#d1fae5}.num.won small b{color:#fff!important}.num.act{background:#1e3a8a;border-color:#1e3a8a;color:#fff}.num.act small{color:#dbeafe}.num.can{background:#fde4e2;border-color:#b3261e}.num.can b{text-decoration:line-through;color:#b3261e}
 .num small{display:block;color:var(--mute);font-size:11px}
 .places td.ok{font-weight:700;color:var(--green)}
 #feed{max-height:420px;overflow:auto}
@@ -192,7 +192,7 @@ function render(){
   const d = races._last; const R = d ? races[d] : null;
   $("curdate").textContent = d ? "séance du " + dfr(d) : "aucune activité d'ouverture récente";
   $("nums").innerHTML = Array.from({length:12}, (_,i) => i+1).map(n => { const x = R && R[n];
-    return `<div class="num${x&&x.won&&!x.cancelled?" won":""}"><small>Créneau</small><b>${pad(n)}</b>${x ? `<small>${x.choice.size} choisi · ${x.form.size} form.</small>${x.won?(x.cancelled?`<small><s>${x.won}</s> <span style="color:var(--red)">annulé</span></small>`:`<small><b style="font-size:12px;color:var(--green)">✔ ${x.won}</b></small>`):""}` : `<small>–</small>`}</div>`; }).join("");
+    return `<div class="num${x&&x.won&&!x.cancelled?" won":x&&x.won&&x.cancelled?" can":x&&(x.choice.size||x.form.size)?" act":""}"><small>Créneau</small><b>${pad(n)}</b>${x ? `<small>${x.choice.size} choisi · ${x.form.size} form.</small>${x.won?(x.cancelled?`<small><s>${x.won}</s> <span style="color:var(--red)">annulé</span></small>`:`<small><b style="font-size:12px;color:var(--green)">✔ ${x.won}</b></small>`):""}` : `<small>–</small>`}</div>`; }).join("");
   // bandeau fixe : dernier message + 12 numéros
   const f0 = feed[0]; if(f0) $("last").innerHTML = `<span class="mute">${hm(f0.t)}</span> <b>${f0.role}</b> · <span class="${f0.cls}">${esc(f0.txt)}</span>`;
   $("mini").innerHTML = Array.from({length:12}, (_,i) => i+1).map(n => { const x = R && R[n]; const c = !x ? "" : x.won ? (x.cancelled ? " can" : " won") : (x.choice.size||x.form.size) ? " act" : "";
@@ -260,17 +260,18 @@ function replay(id){
   $("rexit").onclick = () => { location.hash = ""; location.reload(); };
   fetch("replays/" + id + ".json",{cache:"no-store"}).then(r => r.json()).then(R => {
     $("rtitle").textContent = "Rejouer : " + rlabel(R.first);
-    const M = R.msgs.filter(m => m.topic === "laressourcerie").sort((a,b) => a.time - b.time);
+    const M = R.msgs.filter(m => m.topic === "laressourcerie").sort((a,b) => a.time - b.time).map(m => Object.assign({_v:m.time*1000}, m));
+    (R.suite||[]).forEach((m,k) => M.push(Object.assign({_v:(R.end+2+2*k)*1000, _suite:true}, m))); const END = (R.end + ((R.suite||[]).length ? 2+2*R.suite.length : 0))*1000;
     let vt = R.start*1000, sp = 4, i = 0, last = Date.now();
     const sb = v => { sp = v; document.querySelectorAll("#rbar [data-sp]").forEach(b => b.classList.toggle("on", +b.dataset.sp === v)); $("rpause").classList.toggle("on", v===0); };
     document.querySelectorAll("#rbar [data-sp]").forEach(b => b.onclick = () => sb(+b.dataset.sp));
     $("rpause").onclick = () => sb(sp ? 0 : 4);
     setInterval(() => { const now = Date.now(); vt += (now - last) * sp; last = now;
-      if(vt > R.end*1000){ vt = R.end*1000; }
-      while(i < M.length && M[i].time*1000 <= vt){ handle(Object.assign({event:"message"}, M[i])); i++; }
+      if(vt > END){ vt = END; }
+      while(i < M.length && M[i]._v <= vt){ if(M[i]._suite) $("rmore").innerHTML = "Suite (plus tard) : " + new Date(M[i].time*1000).toLocaleTimeString("fr-FR") + " — " + ((M[i].message||"").includes("e=cancel") ? "annulation" : "réservation"); handle(Object.assign({event:"message"}, M[i])); i++; }
       $("rclock").textContent = new Date(vt).toLocaleTimeString("fr-FR");
-      $("rprog").style.width = Math.min(100, (vt - R.start*1000) / ((R.end - R.start)*1000) * 100) + "%";
-      if(vt >= R.end*1000 && i >= M.length) $("cstat").textContent = "REJOUER : terminé — ✕ pour revenir au direct"; }, 100);
+      $("rprog").style.width = Math.min(100, (vt - R.start*1000) / (END - R.start*1000) * 100) + "%";
+      if(vt >= END && i >= M.length) $("cstat").textContent = "REJOUER : terminé — ✕ pour revenir au direct"; }, 100);
     $("placesnote").textContent = "En mode Rejouer, ce tableau montre l'état du dernier contrôle, pas celui de la séance rejouée.";
   }).catch(() => { $("cstat").textContent = "enregistrement introuvable"; });
 }
