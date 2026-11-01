@@ -61,6 +61,7 @@ def main():
 
     os.makedirs(OUT, exist_ok=True)
     archive_moves(msgs)
+    archive_feed(msgs)
     now = datetime.now(timezone.utc).timestamp()
     added = 0
     for g in groups:
@@ -205,6 +206,50 @@ def archive_moves(msgs):
         with open(lastp, "w", encoding="utf-8") as f:
             json.dump(prev, f, ensure_ascii=False, separators=(",", ":"))
     return changed
+
+
+# ===== Fil des messages des profils, un fichier par séance visée : replays/feed/<date>.json =====
+FEED = os.path.join(OUT, "feed")
+FEED_CAP = 2000                     # garde-fou par séance
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def archive_feed(msgs):
+    os.makedirs(FEED, exist_ok=True)
+    by = {}
+    for m in msgs:
+        if m["topic"] != "laressourcerie":
+            continue
+        d = (tag(m["message"]) or {}).get("d") or ""
+        if not DATE_RE.match(d):        # message sans séance (alerte…) : rangé au jour où il a été envoyé
+            d = datetime.fromtimestamp(m["time"], PARIS).strftime("%Y-%m-%d")
+        by.setdefault(d, []).append({k: m[k] for k in ("id", "time", "title", "message")})
+    for d, mv in by.items():
+        path = os.path.join(FEED, d + ".json")
+        old = []
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                old = json.load(f)
+        have = {m["id"] for m in old}
+        mv = [m for m in mv if m["id"] not in have]
+        if mv:
+            allm = sorted(old + mv, key=lambda m: m["time"])[-FEED_CAP:]
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(allm, f, ensure_ascii=False, separators=(",", ":"))
+            print("fil", d, "+", len(mv))
+    # en glissant : une séance passée sort de l'archive
+    today = datetime.now(PARIS).strftime("%Y-%m-%d")
+    dates = []
+    for name in sorted(os.listdir(FEED)):
+        if not name.endswith(".json") or name == "index.json":
+            continue
+        d = name[:-5]
+        if d < today:
+            os.remove(os.path.join(FEED, name))
+        else:
+            dates.append(d)
+    with open(os.path.join(FEED, "index.json"), "w", encoding="utf-8") as f:
+        json.dump(dates, f)
 
 
 if __name__ == "__main__":

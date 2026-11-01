@@ -52,6 +52,7 @@ tr.absent td{color:var(--mute);opacity:.6}
 .num small{display:block;color:var(--mute);font-size:11px}
 .places td.ok{font-weight:700;color:var(--green)}
 #feed{max-height:420px;overflow:auto}
+#feedf{font-size:12px;color:var(--mute,#6b7a70);margin:-4px 0 6px}#feedf a{margin-right:6px;padding:1px 6px;border-radius:4px;background:var(--line);color:inherit;text-decoration:none;cursor:pointer}#feedf a.on{background:var(--green);color:var(--card)}
 .note{font-size:12px;color:var(--mute);margin-top:6px}
 </style>
 </head>
@@ -85,7 +86,7 @@ tr.absent td{color:var(--mute);opacity:.6}
     <div class="scroll"><table><thead><tr><th>Heure</th><th>Profil</th><th>Séance</th><th>N°</th><th>Événement</th></tr></thead><tbody id="hist"></tbody></table></div>
     <div class="note">Rattrapage = place prise par un gnat après une annulation. Les essais faits à blanc sont marqués « blanc ».</div>
   </section>
-  <section class="span6"><h2>Fil des messages</h2><div id="feed"><table><tbody id="feedb"></tbody></table></div></section>
+  <section class="span6"><h2>Fil des messages <span class="mute" id="feedc" style="font-weight:400"></span></h2><div id="feedf"></div><div id="feed"><table><tbody id="feedb"></tbody></table></div></section>
 </main>
 <script>
 "use strict";
@@ -104,7 +105,7 @@ const P = [
  ["nat6","maison","N","02","v22l",1,"2026-11-01T17:53:00+01:00",110,1],
  ["lal2","maison","L","02","v22l",1,"2026-11-01T17:54:52+01:00",94,1],
  ["nat11","bureau","N","02","v22l",1,"2026-11-01T17:48:35+01:00",126,1],["nat12","bureau","N","02","v22l",1,"2026-11-01T17:48:37+01:00",128,1],["nat13","bureau","N","02","v22l",1,"2026-11-01T17:48:39+01:00",130,1],
- ["lal8","bureau","L","02","v22l",1,"2026-11-01T21:00:06+01:00",132,1],["lal9","bureau","L","02","v22l",1,"2026-11-01T21:00:05+01:00",134,1],["lal10","bureau","L","02","",0,"",136,0],["lal11","bureau","L","02","",0,"",138,0],
+ ["lal8","bureau","L","02","v22l",1,"2026-11-01T21:00:06+01:00",132,1],["lal9","bureau","L","02","v22l",1,"2026-11-01T21:00:05+01:00",134,1],["lal10","bureau","L","02","v22l",1,"2026-11-01T21:52:34+01:00",136,1],["lal11","bureau","L","02","v22l",1,"2026-11-01T21:52:12+01:00",138,1],
  ["nat3","maison","N","03","v22l",1,"2026-11-01T17:53:00+01:00",88,1],
  ["lal3","maison","L","03","v22l",1,"2026-11-01T17:53:00+01:00",96,1],
  ["gnat1","maison","N","ouv. 03/04 · rattr. samedi","v22l",1,"2026-11-01T17:53:00+01:00",100,1],
@@ -125,7 +126,7 @@ const places = JSON.parse(JSON.stringify(PLACES0));
 const snapT = Date.parse(SNAP.at);
 const seen = new Set(); let nmsg = 0, lastId = null, es = null;
 const races = {}; // date -> {n -> {choice:Set, form:Set, won:role}}
-const hist = []; const feed = [];
+const hist = []; let feed = []; const feedSeen = new Set(); let FF = null; const FEEDCAP = 2000;
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2,"0");
 const hm = t => new Date(t).toLocaleTimeString("fr-FR");
@@ -138,6 +139,27 @@ function parseTag(s){ const m = String(s||"").match(/#lg ([^\n]+)/); if(!m) retu
 
 const LABEL = {book:"réservé", cancel:"annulé", choice:"numéro choisi", form:"formulaire", free:"formulaire libéré",
   relay:"demande de relais", relayround:"relais : tour suivant", relaydone:"relais terminé"};
+
+function parisDay(t){ return new Date(t).toLocaleDateString("fr-CA",{timeZone:"Europe/Paris"}); }
+function feedItem(m){
+  const t = (m.time||0)*1000; const title = String(m.title||""); const g = parseTag(m.message);
+  const rm = title.match(/La Gerbe – ([a-z]+\d+)\s*:\s*(.*)$/); const role = (g && g.r) || (rm && rm[1]) || "?";
+  const tt = (g && g.t) || t; let txt, cls = "";
+  if(g && g.e){
+    txt = (LABEL[g.e]||g.e) + (g.n!=null ? " Créneau " + pad(g.n) : "") + (g.d ? " · " + dfr(g.d) : "") + (g.o ? " · n° " + g.o : "") + (g.dry ? " (blanc)" : "");
+    cls = g.e==="book" ? "ev-book" : g.e==="cancel" ? "ev-cancel" : g.e==="form" ? "ev-form" : "ev-choice";
+  } else { txt = rm ? rm[2] : (title || String(m.message||"").slice(0,80)); cls = "ev-alert"; }
+  const d = (g && /^\d{4}-\d{2}-\d{2}$/.test(g.d||"")) ? g.d : parisDay(t);
+  return {id:m.id, t:tt, role, txt, cls, d};
+}
+function feedAdd(m){ if(!m || !m.id || feedSeen.has(m.id)) return false; feedSeen.add(m.id); feed.push(feedItem(m)); return true; }
+function feedTrim(){ feed.sort((a,b) => b.t - a.t); if(feed.length > FEEDCAP) feed.length = FEEDCAP; }
+function loadFeedFiles(){
+  fetch("replays/feed/index.json",{cache:"no-store"}).then(r => r.ok ? r.json() : []).catch(() => []).then(ds => {
+    const today = parisDay(Date.now()); ds = (ds||[]).filter(d => d >= today);
+    return Promise.all(ds.map(d => fetch("replays/feed/"+d+".json",{cache:"no-store"}).then(r => r.ok ? r.json() : []).catch(() => [])));
+  }).then(all => { (all||[]).flat().forEach(feedAdd); feedTrim(); schedule(); });
+}
 
 function handle(m){
   if(!m || m.event !== "message" || seen.has(m.id)) return; seen.add(m.id); lastId = m.id; nmsg++;
@@ -166,7 +188,7 @@ function handle(m){
     txt = rm ? rm[2] : (title || String(m.message||"").slice(0,80)); cls = "ev-alert";
   }
   if(prof[role]){ const p = prof[role]; if(tt >= p.lastT){ p.last = txt; p.lastT = tt; p.cls = cls; } p.n++; p.flash = Date.now(); }
-  feed.unshift({t:tt, role, txt, cls}); if(feed.length > 200) feed.length = 200;
+  if(feedAdd(m)) feedTrim();
   schedule();
 }
 
@@ -201,7 +223,12 @@ function render(){
   // historique
   $("hist").innerHTML = hist.slice(0,60).map(h => `<tr><td>${hm(h.t)}</td><td>${h.role}</td><td>${dfr(h.d)}</td><td>${pad(h.n)}</td><td class="${h.kind==="annulation"?"ev-cancel":"ev-book"}">${h.kind}${h.dry?" (blanc)":""}</td></tr>`).join("") || `<tr><td class="mute" colspan="5">Rien depuis 12 h.</td></tr>`;
   // fil
-  $("feedb").innerHTML = feed.slice(0,120).map(f => `<tr><td class="mute">${hm(f.t)}</td><td><b>${f.role}</b></td><td class="${f.cls}">${esc(f.txt)}</td></tr>`).join("") || `<tr><td class="mute">En attente de messages…</td></tr>`;
+  const fds = [...new Set(feed.map(f => f.d))].sort(); if(FF && !fds.includes(FF)) FF = null;
+  const FL = FF ? feed.filter(f => f.d === FF) : feed;
+  $("feedc").textContent = "· " + FL.length;
+  $("feedf").innerHTML = fds.length > 1 ? "Séance : " + `<a class="${FF?"":"on"}" onclick="FF=null;render()">toutes</a>` + fds.map(d => `<a class="${FF===d?"on":""}" onclick="FF='${d}';render()">${dfr(d)}</a>`).join("") : "";
+  const tday = new Date().toDateString(); const tf = t => { const x = new Date(t); return x.toDateString()===tday ? hm(t) : x.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"}) + " " + x.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); };
+  $("feedb").innerHTML = FL.map(f => `<tr><td class="mute" style="white-space:nowrap">${tf(f.t)}</td><td><b>${f.role}</b></td><td class="${f.cls}">${esc(f.txt)}</td></tr>`).join("") || `<tr><td class="mute">En attente de messages…</td></tr>`;
 }
 
 function nextOpening(){ const now = new Date(); for(let i=0;i<15;i++){ const d = new Date(now.getFullYear(),now.getMonth(),now.getDate()+i);
@@ -276,7 +303,7 @@ function replay(id){
   }).catch(() => { $("cstat").textContent = "enregistrement introuvable"; });
 }
 /* bouton Démo retiré (la démo reste accessible par #demo) */
-render(); if(RPL) replay(RPL); else if(DEMO) demo(); else connect();
+render(); if(RPL) replay(RPL); else if(DEMO) demo(); else { loadFeedFiles(); connect(); }
 </script>
 </body>
 </html>
