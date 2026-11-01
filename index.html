@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableau de bord</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{--bg:#f4f6f3;--card:#fff;--ink:#1d2a22;--mute:#6b7a70;--line:#dfe5df;--green:#2f7d4a;--green2:#e3f2e8;--orange:#c77700;--orange2:#fff1dc;--red:#b3261e;--red2:#fde4e2;--blue:#2b5fb4;--blue2:#e3ecfb;--gold:#e9a93a}
+@media (prefers-color-scheme:dark){:root{--bg:#121714;--card:#1b221d;--ink:#e6efe8;--mute:#93a399;--line:#2c362f;--green:#5fbf7f;--green2:#1f3527;--orange:#f0a640;--orange2:#3a2c14;--red:#ff8a80;--red2:#3d1f1d;--blue:#8fb2ff;--blue2:#1d2a44}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--green);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+header h1{margin:0;font-size:18px;display:flex;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.18);font-size:13px;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:#bbb;display:inline-block}
+.dot.on{background:#7dff9c;box-shadow:0 0 6px #7dff9c}.dot.off{background:#ff8a80}
+main{padding:14px 16px 40px;display:grid;gap:14px;grid-template-columns:repeat(12,1fr);max-width:1500px;margin:0 auto}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+h2{margin:0 0 8px;font-size:15px}
+.span12{grid-column:span 12}.span8{grid-column:span 8}.span4{grid-column:span 4}.span6{grid-column:span 6}
+@media (max-width:1000px){.span8,.span4,.span6{grid-column:span 12}}
+.scroll{overflow-x:auto}
+@media (max-width:700px){main{padding:10px 8px 30px;gap:10px}section{padding:10px}.hm{display:none}th,td{padding:5px 6px}header h1{font-size:16px}}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:12px;color:var(--mute);font-weight:600;position:sticky;top:0;background:var(--card)}
+tr.absent td{color:var(--mute);opacity:.6}
+.tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:12px;font-weight:600}
+.t-maison{background:var(--blue2);color:var(--blue)}.t-bureau{background:var(--orange2);color:var(--orange)}
+.t-reel{background:var(--green2);color:var(--green)}.t-blanc{background:var(--line);color:var(--mute)}
+.ev-book{color:var(--green);font-weight:700}.ev-cancel{color:var(--red);font-weight:600}.ev-form{color:var(--blue)}.ev-choice{color:var(--ink)}.ev-alert{color:var(--orange);font-weight:600}
+.flash{animation:fl 2.5s ease-out}@keyframes fl{0%{background:#fff3b0}100%{background:transparent}}
+.mute{color:var(--mute)}
+.nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.num{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.num b{display:block;font-size:20px}.num.won{background:var(--green2);border-color:var(--green)}
+.num small{display:block;color:var(--mute);font-size:11px}
+.places td.ok{font-weight:700;color:var(--green)}
+#feed{max-height:420px;overflow:auto}
+.note{font-size:12px;color:var(--mute);margin-top:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 21V8" stroke="#ffe08a" stroke-width="2" stroke-linecap="round"/><g fill="#ffe08a"><ellipse cx="12" cy="6" rx="2" ry="3.5"/><ellipse cx="9.3" cy="10" rx="1.8" ry="3.2" transform="rotate(-32 9.3 10)"/><ellipse cx="14.7" cy="10" rx="1.8" ry="3.2" transform="rotate(32 14.7 10)"/><ellipse cx="9.3" cy="14.5" rx="1.8" ry="3.2" transform="rotate(-32 9.3 14.5)"/><ellipse cx="14.7" cy="14.5" rx="1.8" ry="3.2" transform="rotate(32 14.7 14.5)"/></g></svg>Tableau de bord</h1>
+  <span class="pill"><span id="cdot" class="dot"></span><span id="cstat">connexion à ntfy…</span></span>
+  <span class="pill">⏱ <span id="clock">–</span></span>
+  <span class="pill">Prochaine ouverture : <b id="nextopen">–</b></span>
+  <span class="pill">Messages reçus : <b id="nmsg">0</b></span>
+</header>
+<main>
+  <section class="span8"><h2>Course en cours – <span id="curdate" class="mute">aucune activité d'ouverture récente</span></h2>
+    <div class="nums" id="nums"></div>
+    <div class="note">Pour chaque numéro : profils qui l'ont choisi / arrivés au formulaire, puis le gagnant. Calculé sur les messages ntfy de la séance la plus récente.</div>
+  </section>
+  <section class="span4"><h2>Places N et L</h2>
+    <div class="scroll"><table class="places"><thead><tr><th>Séance</th><th>N</th><th>L</th></tr></thead><tbody id="places"></tbody></table></div>
+    <div class="note" id="placesnote"></div>
+  </section>
+  <section class="span12"><h2>Profils (PC maison et PC bureau)</h2>
+    <div class="scroll"><table><thead><tr><th>Profil</th><th>PC</th><th class="hm">Compte</th><th>Cible</th><th>Mode</th><th class="hm">Démarré</th><th>Relance estimée</th><th>Dernière action (ntfy)</th><th>Heure</th><th class="hm">Actions reçues</th></tr></thead><tbody id="profs"></tbody></table></div>
+    <div class="note" id="snapnote"></div>
+  </section>
+  <section class="span6"><h2>Réservations, annulations et rattrapages</h2>
+    <div class="scroll"><table><thead><tr><th>Heure</th><th>Profil</th><th>Séance</th><th>N°</th><th>Événement</th></tr></thead><tbody id="hist"></tbody></table></div>
+    <div class="note">Rattrapage = place prise par un gnat après une annulation. Les essais faits à blanc sont marqués « blanc ».</div>
+  </section>
+  <section class="span6"><h2>Fil des messages</h2><div id="feed"><table><tbody id="feedb"></tbody></table></div></section>
+</main>
+<script>
+"use strict";
+/* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
+const SNAP = { at: "2026-11-01T07:44:00+01:00", label: "contrôle du dim. 01/11 à 07:44" };
+const P = [
+ // profil, pc, compte, cible, version, réel?, démarré (ISO), relance (min), existe?
+ ["nat1","maison","N","01","v22k",1,"2026-11-01T07:41:32+01:00",84,1],
+ ["nat5","maison","N","01","v22k",1,"2026-11-01T06:00:02+01:00",108,1],
+ ["lal1","maison","L","01","v22k",1,"2026-11-01T07:23:44+01:00",92,1],
+ ["nat7","bureau","N","01","v22l",0,"2026-11-01T06:21:45+01:00",112,1],
+ ["nat8","bureau","N","01","",0,"",114,0],["nat9","bureau","N","01","",0,"",116,0],["nat10","bureau","N","01","",0,"",118,0],
+ ["lal5","bureau","L","01","",0,"",120,0],["lal6","bureau","L","01","",0,"",122,0],["lal7","bureau","L","01","",0,"",124,0],
+ ["nat2","maison","N","02","v22k",1,"2026-11-01T06:34:03+01:00",86,1],
+ ["nat6","maison","N","02","v22k",1,"2026-11-01T06:12:03+01:00",110,1],
+ ["lal2","maison","L","02","v22k",1,"2026-11-01T07:40:21+01:00",94,1],
+ ["nat11","bureau","N","02","",0,"",126,0],["nat12","bureau","N","02","",0,"",128,0],["nat13","bureau","N","02","",0,"",130,0],
+ ["lal8","bureau","L","02","",0,"",132,0],["lal9","bureau","L","02","",0,"",134,0],["lal10","bureau","L","02","",0,"",136,0],["lal11","bureau","L","02","",0,"",138,0],
+ ["nat3","maison","N","03","v22k",1,"2026-11-01T06:50:34+01:00",88,1],
+ ["lal3","maison","L","03","v22k",1,"2026-11-01T06:20:50+01:00",96,1],
+ ["gnat1","maison","N","ouv. 03/04 · rattr. samedi","v22k",1,"2026-11-01T06:50:01+01:00",100,1],
+ ["gnat2","maison","N","ouv. 03/04 · rattr. mardi","v22k",1,"2026-11-01T07:04:26+01:00",102,1],
+ ["gnat3","maison","N","ouv. 03/04 · rattr. mercredi","v22k",1,"2026-11-01T07:19:01+01:00",104,1],
+ ["gnat4","maison","N","ouv. 03/04 · rattr. jeudi","v22k",1,"2026-11-01T07:33:34+01:00",106,1],
+ ["nat4","maison","N","05 à 12","v22k",1,"2026-11-01T07:07:09+01:00",90,1],
+ ["lal4","maison","L","05 à 12","v22k",1,"2026-11-01T06:35:29+01:00",98,1]
+];
+const PLACES0 = { // places au moment du contrôle
+ "2026-11-03":{N:[4],L:[5]}, "2026-11-04":{N:[10],L:[4]}, "2026-11-05":{N:[],L:[4]}, "2026-11-07":{N:[10],L:[8]}
+};
+const OPEN = {2:"14:00",3:"14:00",4:"14:00",6:"10:00"}; // jours de séance (mar, mer, jeu, sam)
+
+/* ===== État ===== */
+const prof = {}; P.forEach(r => prof[r[0]] = {last:"", lastT:0, n:0});
+const places = JSON.parse(JSON.stringify(PLACES0));
+const snapT = Date.parse(SNAP.at);
+const seen = new Set(); let nmsg = 0, lastId = null, es = null;
+const races = {}; // date -> {n -> {choice:Set, form:Set, won:role}}
+const hist = []; const feed = [];
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,"0");
+const hm = t => new Date(t).toLocaleTimeString("fr-FR");
+const dfr = k => { const [y,m,d] = k.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"}); };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function parseTag(s){ const m = String(s||"").match(/#lg ([^\n]+)/); if(!m) return null; const o = {};
+  m[1].split(" ").forEach(kv => { const i = kv.indexOf("="); if(i>0) o[kv.slice(0,i)] = kv.slice(i+1); });
+  if(o.n != null) o.n = +o.n; if(o.t) o.t = +o.t; return o; }
+
+const LABEL = {book:"réservé", cancel:"annulé", choice:"numéro choisi", form:"formulaire", free:"formulaire libéré",
+  relay:"demande de relais", relayround:"relais : tour suivant", relaydone:"relais terminé"};
+
+function handle(m){
+  if(!m || m.event !== "message" || seen.has(m.id)) return; seen.add(m.id); lastId = m.id; nmsg++;
+  const t = (m.time||0)*1000; const title = String(m.title||""); const g = parseTag(m.message);
+  const rm = title.match(/La Gerbe – ([a-z]+\d+)\s*:\s*(.*)$/); const role = (g && g.r) || (rm && rm[1]) || "?";
+  const tt = (g && g.t) || t; let txt, cls = "";
+  if(g && g.e){
+    txt = (LABEL[g.e]||g.e) + (g.n!=null ? " Créneau " + pad(g.n) : "") + (g.d ? " · " + dfr(g.d) : "") + (g.o ? " · n° " + g.o : "") + (g.dry ? " (blanc)" : "");
+    cls = g.e==="book" ? "ev-book" : g.e==="cancel" ? "ev-cancel" : g.e==="form" ? "ev-form" : "ev-choice";
+    if(g.d && g.n!=null && (g.e==="choice"||g.e==="form"||g.e==="book")){
+      const R = races[g.d] || (races[g.d] = {}); const x = R[g.n] || (R[g.n] = {choice:new Set(), form:new Set(), won:null});
+      if(g.e==="choice") x.choice.add(role); if(g.e==="form") x.form.add(role); if(g.e==="book" && !g.dry) x.won = role;
+      if(g.e!=="book"){ races._last = (!races._lastT || tt >= races._lastT) ? g.d : races._last; races._lastT = Math.max(races._lastT||0, tt); }
+    }
+    if((g.e==="book"||g.e==="cancel") && g.d && g.n!=null){
+      const kind = g.e==="cancel" ? "annulation" : /^gnat/.test(role) ? "rattrapage" : "réservation";
+      hist.unshift({t:tt, role, d:g.d, n:g.n, kind, dry:!!g.dry});
+      if(!g.dry && tt > snapT && (g.p==="N"||g.p==="L")){
+        const pl = places[g.d] || (places[g.d] = {N:[],L:[]}); const a = pl[g.p];
+        if(g.e==="book" && !a.includes(g.n)) a.push(g.n);
+        if(g.e==="cancel"){ const i = a.indexOf(g.n); if(i>=0) a.splice(i,1); }
+      }
+    }
+  } else {
+    txt = rm ? rm[2] : (title || String(m.message||"").slice(0,80)); cls = "ev-alert";
+  }
+  if(prof[role]){ const p = prof[role]; if(tt >= p.lastT){ p.last = txt; p.lastT = tt; p.cls = cls; } p.n++; p.flash = Date.now(); }
+  feed.unshift({t:tt, role, txt, cls}); if(feed.length > 200) feed.length = 200;
+  schedule();
+}
+
+let pending = false; function schedule(){ if(!pending){ pending = true; requestAnimationFrame(() => { pending = false; render(); }); } }
+
+function nextReload(p){ if(!p[6]) return null; const st = Date.parse(p[6]), per = p[7]*60000; let n = st + per; while(n < Date.now()) n += per; return n; }
+
+function render(){
+  $("nmsg").textContent = nmsg;
+  // profils
+  $("profs").innerHTML = P.map(p => { const s = prof[p[0]], nr = nextReload(p); const fl = s.flash && Date.now()-s.flash < 2500 ? " flash" : "";
+    return `<tr class="${p[8]?"":"absent"}${fl}"><td><b>${p[0]}</b></td><td><span class="tag t-${p[1]}">PC ${p[1]}</span></td><td class="hm">${p[2]}</td><td>${esc(p[3])}</td>`+
+      `<td>${p[8] ? `<span class="tag ${p[5]?"t-reel":"t-blanc"}">${p[5]?"réel":"à blanc"}</span> <span class="mute">${p[4]}</span>` : `<span class="mute">pas encore créé</span>`}</td>`+
+      `<td class="hm">${p[6] ? hm(Date.parse(p[6])).slice(0,5) : "–"}</td><td>${nr ? hm(nr).slice(0,5) + ` <span class="mute">(dans ${Math.round((nr-Date.now())/60000)} min)</span>` : "–"}</td>`+
+      `<td class="${s.cls||""}">${esc(s.last||"")}</td><td>${s.lastT ? hm(s.lastT) : ""}</td><td class="hm">${s.n||""}</td></tr>`; }).join("");
+  $("snapnote").textContent = "Mode, démarrage et relance : " + SNAP.label + " (relance estimée d'après le cycle de chaque profil). Dernière action : en direct depuis ntfy (messages des 12 dernières heures).";
+  // places
+  const keys = Object.keys(places).sort();
+  $("places").innerHTML = keys.map(k => { const x = places[k]; const f = a => a.length ? a.slice().sort((a,b)=>a-b).map(pad).join(", ") : "–";
+    return `<tr><td>${dfr(k)}</td><td class="${x.N.length?"ok":""}">${f(x.N)}</td><td class="${x.L.length?"ok":""}">${f(x.L)}</td></tr>`; }).join("");
+  $("placesnote").textContent = "Point de départ : " + SNAP.label + ", puis mis à jour en direct (réservations et annulations réelles reçues sur ntfy).";
+  // course
+  const d = races._last; const R = d ? races[d] : null;
+  $("curdate").textContent = d ? "séance du " + dfr(d) : "aucune activité d'ouverture récente";
+  $("nums").innerHTML = Array.from({length:12}, (_,i) => i+1).map(n => { const x = R && R[n];
+    return `<div class="num${x&&x.won?" won":""}"><small>Créneau</small><b>${pad(n)}</b>${x ? `<small>${x.choice.size} choisi · ${x.form.size} form.</small>${x.won?`<small><b style="font-size:12px;color:var(--green)">✔ ${x.won}</b></small>`:""}` : `<small>–</small>`}</div>`; }).join("");
+  // historique
+  $("hist").innerHTML = hist.slice(0,60).map(h => `<tr><td>${hm(h.t)}</td><td>${h.role}</td><td>${dfr(h.d)}</td><td>${pad(h.n)}</td><td class="${h.kind==="annulation"?"ev-cancel":"ev-book"}">${h.kind}${h.dry?" (blanc)":""}</td></tr>`).join("") || `<tr><td class="mute" colspan="5">Rien depuis 12 h.</td></tr>`;
+  // fil
+  $("feedb").innerHTML = feed.slice(0,120).map(f => `<tr><td class="mute">${hm(f.t)}</td><td><b>${f.role}</b></td><td class="${f.cls}">${esc(f.txt)}</td></tr>`).join("") || `<tr><td class="mute">En attente de messages…</td></tr>`;
+}
+
+function nextOpening(){ const now = new Date(); for(let i=0;i<15;i++){ const d = new Date(now.getFullYear(),now.getMonth(),now.getDate()+i);
+  if(!OPEN[d.getDay()]) continue; const [h,m] = OPEN[d.getDay()].split(":").map(Number);
+  const op = new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,m-1); // sortie des places de la semaine suivante, vers hh:59
+  if(op > now) return op; } return null; }
+
+function connect(){
+  try{ if(es) es.close(); }catch(e){}
+  const since = lastId || "12h";
+  es = new EventSource("https://ntfy.sh/laressourcerie/sse?since=" + encodeURIComponent(since));
+  es.onopen = () => { $("cdot").className = "dot on"; $("cstat").textContent = "connecté à ntfy (en direct)"; };
+  es.onmessage = e => { try{ handle(JSON.parse(e.data)); }catch(x){} };
+  es.onerror = () => { $("cdot").className = "dot off"; $("cstat").textContent = "connexion perdue, reconnexion…"; try{ es.close(); }catch(e){} setTimeout(connect, 5000); };
+}
+document.addEventListener("visibilitychange", () => { if(!document.hidden && (!es || es.readyState === 2)) connect(); });
+setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString("fr-FR");
+  const o = nextOpening(); $("nextopen").textContent = o ? o.toLocaleString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "–";
+  schedule(); }, 1000);
+render(); connect();
+</script>
+</body>
+</html>
