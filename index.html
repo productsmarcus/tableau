@@ -14,7 +14,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-app
 header{background:linear-gradient(135deg,#0f1f2e,#173b2c);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;justify-content:center;text-align:center;border-bottom:3px solid #e9a93a}
 header h1{margin:0 0 2px;font-size:19px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;letter-spacing:.3px}
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:#2b3a4a;color:#fff;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid rgba(255,255,255,.15)}
-.p-conn{background:#24313f}.p-clock{background:#3b4656}.p-open{background:#b45309}.p-msg{background:#1d4ed8}.p-demo{background:#7c3aed}
+.p-conn{background:#24313f}.p-clock{background:#3b4656}.p-open{background:#b45309}.p-msg{background:#1d4ed8}.p-demo{background:#7c3aed}.p-rpl{background:#0f766e;text-decoration:none;cursor:pointer}.p-rpl.cur{background:#f59e0b;color:#1a1a1a}
+#rbar{display:none;background:#0f766e;color:#fff;padding:6px 12px;gap:6px 8px;flex-wrap:wrap;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+#rbar button{background:#134e4a;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:3px 10px;font-weight:700;cursor:pointer}#rbar button.on{background:#f59e0b;color:#1a1a1a}
+#rbar .rprog{flex:1 1 160px;max-width:320px;height:6px;background:rgba(255,255,255,.25);border-radius:3px;overflow:hidden}#rbar .rprog i{display:block;height:100%;background:#fde68a;width:0}
 .pill b{color:#fff}
 .dot{width:9px;height:9px;border-radius:50%;background:#bbb;display:inline-block}
 .dot.on{background:#7dff9c;box-shadow:0 0 6px #7dff9c}.dot.off{background:#ff8a80}
@@ -60,7 +63,10 @@ tr.absent td{color:var(--mute);opacity:.6}
   <span class="pill p-open">Prochaine ouverture : <b id="nextopen">–</b></span>
   <span class="pill p-msg">Messages reçus : <b id="nmsg">0</b></span>
   <a class="pill p-demo" id="demobtn" href="#demo" style="text-decoration:none">▶ Démo</a>
+  <span id="rpls"></span>
 </header>
+<div id="rbar"><span id="rtitle">Rejouer</span><span>⏱ <b id="rclock">–</b></span><span class="rprog"><i id="rprog"></i></span>
+  <button id="rpause">⏸</button><button data-sp="1">×1</button><button data-sp="4" class="on">×4</button><button data-sp="10">×10</button><button id="rexit">✕ Retour au direct</button></div>
 <div id="bar"><div id="last"><span class="mute">En attente du premier message…</span></div><div class="mini" id="mini"></div></div></div>
 <main>
   <section class="span8"><h2>Course en cours – <span id="curdate" class="mute">aucune activité d'ouverture récente</span></h2>
@@ -181,7 +187,7 @@ function render(){
   const keys = Object.keys(places).sort();
   $("places").innerHTML = keys.map(k => { const x = places[k]; const f = a => a.length ? a.slice().sort((a,b)=>a-b).map(pad).join(", ") : "–";
     return `<tr><td>${dfr(k)}</td><td class="${x.N.length?"ok":""}">${f(x.N)}</td><td class="${x.L.length?"ok":""}">${f(x.L)}</td></tr>`; }).join("");
-  $("placesnote").textContent = "Point de départ : " + SNAP.label + ", puis mis à jour en direct (réservations et annulations réelles reçues sur ntfy).";
+  $("placesnote").textContent = (typeof RPL!=="undefined" && RPL) ? "En mode Rejouer, ce tableau montre l'état du dernier contrôle, pas celui de la séance rejouée." : "Point de départ : " + SNAP.label + ", puis mis à jour en direct (réservations et annulations réelles reçues sur ntfy).";
   // course
   const d = races._last; const R = d ? races[d] : null;
   $("curdate").textContent = d ? "séance du " + dfr(d) : "aucune activité d'ouverture récente";
@@ -235,8 +241,33 @@ function demo(){
   E(30, "cancel", "N", "nat3", 3); E(32, "cancel", "N", "gnat3", 4); E(34, "cancel", "N", "nat4", 5); E(36, "cancel", "L", "lal4", 6);
   setTimeout(() => { $("cstat").textContent = "DÉMO TERMINÉE — recharge la page pour la rejouer"; }, 38000);
 }
+/* ===== Rejouer une ouverture enregistrée (replays/*.json, archivés par GitHub toutes les 3 h) ===== */
+const RPL = (location.hash.match(/^#replay=([\w-]+)/)||[])[1] || null;
+const rlabel = t => new Date(t*1000).toLocaleString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+fetch("replays/index.json",{cache:"no-store"}).then(r => r.ok ? r.json() : []).then(list => {
+  $("rpls").innerHTML = list.slice(0,4).map((x,i) => `<a class="pill p-rpl${x.id===RPL?" cur":""}" href="#replay=${x.id}" title="${rlabel(x.first)} · ${x.events} actions · ${x.books} réservation(s)">⏪ J-${i+1} <span style="font-weight:400">${rlabel(x.first).replace(/^(\S+)\s(\S+)\s/,"$2 ")}</span></a>`).join(" ");
+}).catch(() => {});
+function replay(id){
+  $("cdot").className = "dot on"; $("cstat").textContent = "REJOUER (rien n'est envoyé)"; $("rbar").style.display = "flex";
+  $("rexit").onclick = () => { location.hash = ""; location.reload(); };
+  fetch("replays/" + id + ".json",{cache:"no-store"}).then(r => r.json()).then(R => {
+    $("rtitle").textContent = "Rejouer : " + rlabel(R.first);
+    const M = R.msgs.filter(m => m.topic === "laressourcerie").sort((a,b) => a.time - b.time);
+    let vt = R.start*1000, sp = 4, i = 0, last = Date.now();
+    const sb = v => { sp = v; document.querySelectorAll("#rbar [data-sp]").forEach(b => b.classList.toggle("on", +b.dataset.sp === v)); $("rpause").classList.toggle("on", v===0); };
+    document.querySelectorAll("#rbar [data-sp]").forEach(b => b.onclick = () => sb(+b.dataset.sp));
+    $("rpause").onclick = () => sb(sp ? 0 : 4);
+    setInterval(() => { const now = Date.now(); vt += (now - last) * sp; last = now;
+      if(vt > R.end*1000){ vt = R.end*1000; }
+      while(i < M.length && M[i].time*1000 <= vt){ handle(Object.assign({event:"message"}, M[i])); i++; }
+      $("rclock").textContent = new Date(vt).toLocaleTimeString("fr-FR");
+      $("rprog").style.width = Math.min(100, (vt - R.start*1000) / ((R.end - R.start)*1000) * 100) + "%";
+      if(vt >= R.end*1000 && i >= M.length) $("cstat").textContent = "REJOUER : terminé — ✕ pour revenir au direct"; }, 100);
+    $("placesnote").textContent = "En mode Rejouer, ce tableau montre l'état du dernier contrôle, pas celui de la séance rejouée.";
+  }).catch(() => { $("cstat").textContent = "enregistrement introuvable"; });
+}
 if(DEMO){ const b=$("demobtn"); b.textContent="◼ Retour au direct"; b.href="#"; b.onclick=e=>{ e.preventDefault(); location.hash=""; location.reload(); }; }
-render(); if(DEMO) demo(); else connect();
+render(); if(RPL) replay(RPL); else if(DEMO) demo(); else connect();
 </script>
 </body>
 </html>

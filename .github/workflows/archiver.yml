@@ -1,0 +1,27 @@
+name: Archiver les ouvertures
+on:
+  schedule:
+    - cron: "23 */3 * * *"   # toutes les 3 h (ntfy garde 12 h de messages)
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: archiver
+  cancel-in-progress: false
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lire ntfy et enregistrer les moments d'activité
+        run: python3 scripts/archive.py
+      - name: Enregistrer et publier s'il y a du nouveau
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add replays
+          if git diff --cached --quiet; then echo "rien de nouveau"; exit 0; fi
+          git -c user.name="archiveur" -c user.email="actions@users.noreply.github.com" commit -m "Archive des ouvertures"
+          git push
+          gh workflow run publier.yml --ref main
