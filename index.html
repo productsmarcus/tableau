@@ -4,16 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tableau de bord</title>
-<!-- version 2026-11-01 09:45 -->
 <meta name="robots" content="noindex,nofollow">
 <style>
 :root{--bg:#f4f6f3;--card:#fff;--ink:#1d2a22;--mute:#6b7a70;--line:#dfe5df;--green:#2f7d4a;--green2:#e3f2e8;--orange:#c77700;--orange2:#fff1dc;--red:#b3261e;--red2:#fde4e2;--blue:#2b5fb4;--blue2:#e3ecfb;--gold:#e9a93a}
 @media (prefers-color-scheme:dark){:root{--bg:#121714;--card:#1b221d;--ink:#e6efe8;--mute:#93a399;--line:#2c362f;--green:#5fbf7f;--green2:#1f3527;--orange:#f0a640;--orange2:#3a2c14;--red:#ff8a80;--red2:#3d1f1d;--blue:#8fb2ff;--blue2:#1d2a44}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
-header{background:var(--green);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
-header h1{margin:0;font-size:18px;display:flex;align-items:center;gap:8px}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.18);font-size:13px;white-space:nowrap}
+header{background:linear-gradient(135deg,#0f1f2e,#173b2c);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;justify-content:center;text-align:center;border-bottom:3px solid #e9a93a}
+header h1{margin:0 0 2px;font-size:19px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;letter-spacing:.3px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:#2b3a4a;color:#fff;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid rgba(255,255,255,.15)}
+.p-conn{background:#24313f}.p-clock{background:#3b4656}.p-open{background:#b45309}.p-msg{background:#1d4ed8}.p-demo{background:#7c3aed}
+.pill b{color:#fff}
 .dot{width:9px;height:9px;border-radius:50%;background:#bbb;display:inline-block}
 .dot.on{background:#7dff9c;box-shadow:0 0 6px #7dff9c}.dot.off{background:#ff8a80}
 #top{position:sticky;top:0;z-index:6}
@@ -52,11 +53,11 @@ tr.absent td{color:var(--mute);opacity:.6}
 <body>
 <div id="top"><header>
   <h1><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 21V8" stroke="#ffe08a" stroke-width="2" stroke-linecap="round"/><g fill="#ffe08a"><ellipse cx="12" cy="6" rx="2" ry="3.5"/><ellipse cx="9.3" cy="10" rx="1.8" ry="3.2" transform="rotate(-32 9.3 10)"/><ellipse cx="14.7" cy="10" rx="1.8" ry="3.2" transform="rotate(32 14.7 10)"/><ellipse cx="9.3" cy="14.5" rx="1.8" ry="3.2" transform="rotate(-32 9.3 14.5)"/><ellipse cx="14.7" cy="14.5" rx="1.8" ry="3.2" transform="rotate(32 14.7 14.5)"/></g></svg>Tableau de bord</h1>
-  <span class="pill"><span id="cdot" class="dot"></span><span id="cstat">connexion à ntfy…</span></span>
-  <span class="pill">⏱ <span id="clock">–</span></span>
-  <span class="pill">Prochaine ouverture : <b id="nextopen">–</b></span>
-  <span class="pill">Messages reçus : <b id="nmsg">0</b></span>
-  <a class="pill" id="demobtn" href="#demo" style="color:#fff;text-decoration:none;font-weight:700">▶ Démo</a>
+  <span class="pill p-conn"><span id="cdot" class="dot"></span><span id="cstat">connexion à ntfy…</span></span>
+  <span class="pill p-clock">⏱ <span id="clock">–</span></span>
+  <span class="pill p-open">Prochaine ouverture : <b id="nextopen">–</b></span>
+  <span class="pill p-msg">Messages reçus : <b id="nmsg">0</b></span>
+  <a class="pill p-demo" id="demobtn" href="#demo" style="text-decoration:none">▶ Démo</a>
 </header>
 <div id="bar"><div id="last"><span class="mute">En attente du premier message…</span></div><div class="mini" id="mini"></div></div></div>
 <main>
