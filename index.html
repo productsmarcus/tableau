@@ -208,7 +208,27 @@ document.addEventListener("visibilitychange", () => { if(!document.hidden && (!e
 setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString("fr-FR");
   const o = nextOpening(); $("nextopen").textContent = o ? o.toLocaleString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "–";
   schedule(); }, 1000);
-render(); connect();
+const DEMO = location.hash === "#demo";
+window.addEventListener("hashchange", () => location.reload());
+function demo(){
+  $("cdot").className = "dot on"; $("cstat").textContent = "MODE DÉMO (rien n'est envoyé)";
+  const d = "2026-11-10", T0 = Date.now(); let k = 0;
+  const E = (s, e, p, r, n, o) => setTimeout(() => { const t = Date.now();
+    handle({id:"demo"+(k++), event:"message", time:Math.floor(t/1000), title:"La Gerbe – "+r+" : "+e,
+      message:"#lg e="+e+" p="+p+" r="+r+" d="+d+(n!=null?" n="+n:"")+(o?" o="+o:"")+" t="+t}); }, s*1000);
+  const runners = [["nat1","N",1],["nat5","N",1],["lal1","L",1],["nat2","N",2],["nat6","N",2],["lal2","L",2],
+    ["nat3","N",3],["lal3","L",3],["gnat1","N",3],["gnat2","N",4],["gnat3","N",4],["gnat4","N",4],["nat4","N",5],["lal4","L",6]];
+  runners.forEach(([r,p,n],i) => E(1 + i*0.15, "choice", p, r, n));
+  runners.forEach(([r,p,n],i) => E(7 + (i%5)*0.8 + i*0.1, "form", p, r, n));
+  E(13.0, "book", "N", "nat5", 1, "31001");  E(13.6, "free", "N", "nat1", 1); E(13.9, "free", "L", "lal1", 1);
+  E(14.5, "book", "L", "lal2", 2, "31002");  E(15.0, "free", "N", "nat2", 2); E(15.3, "free", "N", "nat6", 2);
+  E(16.5, "book", "N", "nat3", 3, "31003");  E(17.0, "free", "L", "lal3", 3); E(17.2, "free", "N", "gnat1", 3);
+  E(18.5, "book", "N", "gnat3", 4, "31004"); E(19.0, "free", "N", "gnat2", 4); E(19.2, "free", "N", "gnat4", 4);
+  E(20.5, "book", "N", "nat4", 5, "31005");  E(21.5, "book", "L", "lal4", 6, "31006");
+  E(30, "cancel", "N", "nat3", 3); E(32, "cancel", "N", "gnat3", 4); E(34, "cancel", "N", "nat4", 5); E(36, "cancel", "L", "lal4", 6);
+  setTimeout(() => { $("cstat").textContent = "DÉMO TERMINÉE — recharge la page pour la rejouer"; }, 38000);
+}
+render(); if(DEMO) demo(); else connect();
 </script>
 </body>
 </html>
