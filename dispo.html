@@ -36,7 +36,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
 .cnt.c-soon{background:#e3ecfb;color:#1d4ed8}.cnt.c-err{background:#fde4e2;color:#b3261e}
 .dot.off{background:#ff8a80;box-shadow:0 0 6px #ff8a80}.empty{grid-column:1/-1;text-align:center;color:var(--mute);padding:30px}.mv{max-width:1100px;margin:0 auto 14px;padding:0 12px}.mv .box{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .mv h2{font-size:14px;margin:0;padding:8px 12px;background:#173b2c;color:#fff}
-.mv .r{display:grid;grid-template-columns:70px 1fr 1fr;border-bottom:1px solid var(--line);font-size:12px}.mv .r:last-child{border-bottom:0}
+.mv .r{display:grid;grid-template-columns:86px 1fr 1fr;border-bottom:1px solid var(--line);font-size:12px}.mv .r:last-child{border-bottom:0}
 .mv .r>div{padding:5px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mv .hd{font-weight:700;font-size:12px;color:var(--mute);background:#f7f9f7}
 .mv .tm{color:var(--mute);overflow:visible!important;text-overflow:clip!important;font-variant-numeric:tabular-nums}.mv .lib{background:#fff8c9}.mv .pri{background:#fde4e2}
 .mv .r.nw{animation:nw 1.6s ease}@keyframes nw{from{background:#fff3a0}to{background:transparent}}
@@ -58,8 +58,8 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
 <div id="legend"><span><i class="sw" style="background:var(--green)"></i>numéro libre</span><span><i class="sw" style="background:#ffe23a"></i>vient de se libérer</span><span><i class="sw" style="background:var(--red)"></i>vient d'être pris</span><span><i class="sw" style="background:var(--blue)"></i>déjà à N ou L</span><span><i class="sw" style="background:#eef1ee"></i>pris</span></div>
 </div>
 <main id="days"><div class="empty">En attente du premier relevé du profil observateur…</div></main>
-<section class="mv"><div class="box"><h2>Derniers mouvements (<span id="mvc">0</span>/100)</h2><div class="r hd"><div>heure</div><div>🟨 libéré</div><div>🟥 pris</div></div><div id="mvl" style="max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="none">aucun mouvement vu dans les 12 dernières heures</div></div></div></section>
-<footer>Relevé en continu par un profil observateur (environ une minute par tour), publié seulement quand quelque chose change, et au moins toutes les 30 minutes. Places N et L : point de départ du dernier contrôle, puis réservations et annulations reçues en direct.</footer>
+<section class="mv"><div class="box"><h2>Derniers mouvements (<span id="mvc">0</span>)<span id="mvf" style="font-weight:400;font-size:12px;margin-left:8px"></span></h2><div class="r hd"><div>heure</div><div>🟨 libéré</div><div>🟥 pris</div></div><div id="mvl" style="max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="none">aucun mouvement vu dans les 12 dernières heures</div></div></div></section>
+<footer>Relevé en continu par un profil observateur (un tour toutes les 10 secondes environ), publié seulement quand quelque chose change, et au moins toutes les 30 minutes. Places N et L : point de départ du dernier contrôle, puis réservations et annulations reçues en direct.</footer>
 <script>
 "use strict";
 const SNAP={at:"2026-11-01T11:21:00+01:00"};
@@ -67,7 +67,7 @@ const PLACES0={"2026-11-03":{N:[4],L:[5]},"2026-11-04":{N:[10],L:[4]},"2026-11-0
 const OPEN={2:"14:00",3:"14:00",4:"14:00",6:"10:00"};
 const $=id=>document.getElementById(id); const pad=n=>String(n).padStart(2,"0");
 const places=JSON.parse(JSON.stringify(PLACES0)); const snapT=Date.parse(SNAP.at);
-const MVFROM=1793538353463; /* premier relevé correct (v22m.1) */ let MV=[], mvTop=null; let cur=null, prev=null, es=null, lastId=null; const seen=new Set();
+const MVFROM=1793538353463; /* premier relevé correct (v22m.1) */ let MV=[], mvTop=null, MVF=null; const MVK=new Set(); const MVCAP=2000; let cur=null, prev=null, es=null, lastId=null; const seen=new Set();
 const dfr=k=>{const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"});};
 const parseTag=s=>{const m=String(s||"").match(/#lg ([^\n]+)/); if(!m) return null; const o={}; m[1].split(" ").forEach(kv=>{const i=kv.indexOf("="); if(i>0) o[kv.slice(0,i)]=kv.slice(i+1);}); if(o.n!=null) o.n=+o.n; if(o.t) o.t=+o.t; return o;};
 function handle(m){
@@ -82,11 +82,21 @@ function addMoves(a,b){ if(!a||!b) return; const pa={}; a.days.forEach(z=>pa[z.d
   b.days.forEach(z=>{ const oa=pa[z.d]; if(!oa||!z.x) return; Object.keys(z.x).forEach(h=>{ const nv=z.x[h], ov=oa[h];
     const N=Array.isArray(nv)?nv:(nv==="absent"?[]:null), O=Array.isArray(ov)?ov:(ov==="absent"?[]:null); if(!N||!O) return;
     const lib=N.filter(n=>!O.includes(n)), pri=O.filter(n=>!N.includes(n));
-    if(lib.length) MV.push({t:b.t,d:z.d,h,k:"lib",n:lib}); if(pri.length) MV.push({t:b.t,d:z.d,h,k:"pri",n:pri}); }); });
-  if(MV.length>100) MV=MV.slice(-100); }
-function renderMoves(){ const L=MV.slice(-100).reverse(); $("mvc").textContent=L.length; if(!L.length) return; const top=L[0].t+L[0].d+L[0].h+L[0].k;
+    if(lib.length) mvAdd({t:b.t,d:z.d,h,k:"lib",n:lib}); if(pri.length) mvAdd({t:b.t,d:z.d,h,k:"pri",n:pri}); }); });
+  mvTrim(); }
+function mvAdd(m){ const k=m.t+"|"+m.d+"|"+m.h+"|"+m.k; if(MVK.has(k)) return false; MVK.add(k); MV.push(m); return true; }
+function mvTrim(){ MV.sort((a,b)=>a.t-b.t); if(MV.length>MVCAP) MV=MV.slice(-MVCAP); }
+/* historique des 4 séances affichées : archivé par GitHub (replays/moves/<date>.json) */
+function loadMoveFiles(){ const now=new Date(), ds=[]; for(let i=0;i<14&&ds.length<6;i++){ const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i); if(!OPEN[d.getDay()]) continue;
+    ds.push(d.toLocaleDateString("fr-CA")); }
+  Promise.all(ds.map(d=>fetch("replays/moves/"+d+".json",{cache:"no-store"}).then(r=>r.ok?r.json():[]).catch(()=>[]))).then(all=>{ all.flat().forEach(mvAdd); mvTrim(); render(); }); }
+function renderMoves(){ const shown=new Set(cur.days.map(z=>z.d)); if(MVF&&!shown.has(MVF)) MVF=null;
+  const L=MV.filter(m=>shown.has(m.d)&&(!MVF||m.d===MVF)).slice().reverse(); $("mvc").textContent=L.length;
+  $("mvf").innerHTML=MVF?`· filtre ${dfr(MVF)} <a href="#" onclick="MVF=null;render();return false" style="color:#fde68a">✕</a>`:"· touche une date pour filtrer";
+  if(!L.length){ $("mvl").innerHTML='<div class="none">aucun mouvement enregistré pour ces séances</div>'; return; } const top=L[0].t+L[0].d+L[0].h+L[0].k;
+  const tday=new Date().toDateString(); const tf=t=>{ const d=new Date(t); return d.toDateString()===tday?d.toLocaleTimeString("fr-FR"):d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); };
   const txt=m=>dfr(m.d).replace(".","")+" "+m.h+" · <b>"+m.n.map(pad).join(" ")+"</b>";
-  $("mvl").innerHTML=L.map((m,i)=>`<div class="r${i===0&&mvTop!==null&&top!==mvTop?" nw":""}"><div class="tm">${new Date(m.t).toLocaleTimeString("fr-FR")}</div><div class="${m.k==="lib"?"lib":""}">${m.k==="lib"?txt(m):""}</div><div class="${m.k==="pri"?"pri":""}">${m.k==="pri"?txt(m):""}</div></div>`).join("");
+  $("mvl").innerHTML=L.map((m,i)=>`<div class="r${i===0&&mvTop!==null&&top!==mvTop?" nw":""}"><div class="tm">${tf(m.t)}</div><div class="${m.k==="lib"?"lib":""}">${m.k==="lib"?txt(m):""}</div><div class="${m.k==="pri"?"pri":""}">${m.k==="pri"?txt(m):""}</div></div>`).join("");
   mvTop=top; }
 function renderIdle(){ const now=window.__vt||Date.now(); const last=MV.length?MV[MV.length-1].t:null; const el=$("idle"), pl=$("idlep");
   if(!last){ el.textContent="plus de 12 h"; pl.className="pill p-idle"; return; }
@@ -106,7 +116,7 @@ function render(){ renderIdle();
       const free=Array.isArray(v)?v:[]; const ov=pv[z.d]?pv[z.d][t]:undefined; const old=Array.isArray(ov)?ov:(ov==="absent"?[]:null);
       const nums=Array.from({length:12},(_,i)=>i+1).map(n=>`<div class="n${me.includes(n)&&!free.includes(n)&&t===z.s?" me":free.includes(n)?(old&&!old.includes(n)?" new":" f"):(old&&old.includes(n)?" gone":"")}">${pad(n)}</div>`).join("");
       return `<div class="slot"><div class="st"><b>${t}</b>${c}</div><div class="nums">${nums}</div></div>`;}).join("");
-    return `<section class="day"><div class="dh"><b>${dfr(z.d)}</b><span>séance de ${z.s}</span></div><div class="held">Places actuelles : <b>${held}</b></div>${rows}</section>`;}).join("");
+    return `<section class="day"><div class="dh" style="cursor:pointer${MVF===z.d?";background:#b45309":""}" onclick="MVF=MVF===\'${z.d}\'?null:\'${z.d}\';render()" title="filtrer les mouvements de cette séance"><b>${dfr(z.d)}</b><span>séance de ${z.s}</span></div><div class="held">Places actuelles : <b>${held}</b></div>${rows}</section>`;}).join("");
 }
 function nextOpening(){const now=new Date(); for(let i=0;i<15;i++){const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i); if(!OPEN[d.getDay()]) continue; const [h,m]=OPEN[d.getDay()].split(":").map(Number); const op=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,m-1); if(op>now) return op;} return null;}
 function connect(){ try{ if(es) es.close(); }catch(e){}
@@ -152,5 +162,5 @@ if(location.hash==="#demo"){ $("demob").style.display="block"; $("cstat").textCo
   prev={v:1,by:"nat7",t:t-60000,days:[{d:"2026-11-03",s:"14:00",x:{"14:00":"absent","14:15":"absent","14:30":[9],"14:45":[3,7,11]}},{d:"2026-11-04",s:"14:00",x:{"14:00":"absent","14:15":[],"14:30":[2,6,8,12],"14:45":[1,2,3,4,5,6,7,8,9,10,11,12]}},{d:"2026-11-05",s:"14:00",x:{"14:00":"absent","14:15":"absent","14:30":[6,8,12],"14:45":[1,2,3,4,5,6,7,8,9,10,11,12]}},{d:"2026-11-07",s:"10:00",x:{"10:00":"absent","10:15":"absent","10:30":[],"10:45":[2,9]}}]};
   {const b=JSON.parse(JSON.stringify(prev)); const st=[[0,"14:30",[9,4]],[3,"10:15",[8]],[3,"10:15",[]],[1,"14:15",[3]],[1,"14:15",[]],[2,"14:30",[6,8,12,1]],[0,"14:45",[3,7,11,2]]]; let q=JSON.parse(JSON.stringify(prev)); q.t=t-3600000; let tt=q.t; for(const [i,h,v] of st){ const r=JSON.parse(JSON.stringify(q)); tt+=400000; r.t=tt; r.days[i].x[h]=v; addMoves(q,r); q=r; } addMoves(q,prev);}
   cur=JSON.parse(JSON.stringify(prev)); cur.t=t; cur.days[1].x["14:15"]=[12]; cur.days[3].x["10:30"]=[5]; cur.days[1].x["14:30"]=[2,8]; cur.days[0].x["14:45"]=[3,11]; addMoves(prev,cur); render();
-} else if(RPL) replay(RPL); else connect();
+} else if(RPL) replay(RPL); else { loadMoveFiles(); connect(); }
 </script></body></html>

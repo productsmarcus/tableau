@@ -60,6 +60,7 @@ def main():
         groups.append(cur)
 
     os.makedirs(OUT, exist_ok=True)
+    archive_moves(msgs)
     now = datetime.now(timezone.utc).timestamp()
     added = 0
     for g in groups:
@@ -118,7 +119,7 @@ def main():
     # index (les plus récents d'abord)
     idx = []
     for name in sorted(os.listdir(OUT), reverse=True):
-        if not name.endswith(".json") or name == "index.json":
+        if not name.endswith(".json") or name == "index.json" or not os.path.isfile(os.path.join(OUT, name)):
             continue
         with open(os.path.join(OUT, name), encoding="utf-8") as f:
             r = json.load(f)
@@ -126,6 +127,84 @@ def main():
     with open(os.path.join(OUT, "index.json"), "w", encoding="utf-8") as f:
         json.dump(idx, f, ensure_ascii=False, indent=0)
     print(added, "nouveau(x) moment(s) ;", len(idx), "au total")
+
+
+# ===== Mouvements des créneaux (relevés d'obs1), un fichier par séance : replays/moves/<date>.json =====
+MVFROM = 1793538353463              # premier relevé correct (v22m.1)
+MOVES = os.path.join(OUT, "moves")
+MOVES_CAP = 1000                    # garde-fou par séance
+
+
+def _arr(v):
+    return v if isinstance(v, list) else ([] if v == "absent" else None)
+
+
+def archive_moves(msgs):
+    os.makedirs(MOVES, exist_ok=True)
+    lastp = os.path.join(MOVES, "_last.json")
+    last = None
+    if os.path.exists(lastp):
+        with open(lastp, encoding="utf-8") as f:
+            last = json.load(f)
+    rel = []
+    for m in msgs:
+        if m["topic"] != "laressourcerie-dispo":
+            continue
+        try:
+            x = json.loads(m["message"])
+        except Exception:
+            continue
+        if x.get("t", 0) < MVFROM or (last and x["t"] <= last["t"]):
+            continue
+        rel.append(x)
+    rel.sort(key=lambda x: x["t"])
+    new = {}
+    prev = last
+    for x in rel:
+        if prev:
+            pa = {z["d"]: (z.get("x") or {}) for z in prev.get("days", [])}
+            for z in x.get("days", []):
+                oa = pa.get(z["d"])
+                if oa is None or not z.get("x"):
+                    continue
+                for h, nv in z["x"].items():
+                    N, O = _arr(nv), _arr(oa.get(h))
+                    if N is None or O is None:
+                        continue
+                    lib = [n for n in N if n not in O]
+                    pri = [n for n in O if n not in N]
+                    for k, ns in (("lib", lib), ("pri", pri)):
+                        if ns:
+                            new.setdefault(z["d"], []).append({"t": x["t"], "d": z["d"], "h": h, "k": k, "n": ns})
+        # un relevé partiel (moins de jours que le précédent) ne remplace pas l'état de référence pour les jours absents
+        if prev:
+            keep = {z["d"]: z for z in prev.get("days", [])}
+            for z in x.get("days", []):
+                keep[z["d"]] = z
+            today = datetime.fromtimestamp(x["t"] / 1000, PARIS).strftime("%Y-%m-%d")
+            prev = {"t": x["t"], "days": sorted((z for z in keep.values() if z["d"] >= today), key=lambda z: z["d"])}
+        else:
+            prev = {"t": x["t"], "days": x.get("days", [])}
+    changed = 0
+    for d, mv in new.items():
+        path = os.path.join(MOVES, d + ".json")
+        old = []
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                old = json.load(f)
+        keys = {(m["t"], m["h"], m["k"]) for m in old}
+        mv = [m for m in mv if (m["t"], m["h"], m["k"]) not in keys]
+        if mv:
+            allm = sorted(old + mv, key=lambda m: m["t"])[-MOVES_CAP:]
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(allm, f, ensure_ascii=False, separators=(",", ":"))
+            changed += 1
+            print("mouvements", d, "+", len(mv))
+    if prev and (not last or prev["t"] != last["t"]):
+        # on ne garde que les jours encore à venir dans l'état de référence
+        with open(lastp, "w", encoding="utf-8") as f:
+            json.dump(prev, f, ensure_ascii=False, separators=(",", ":"))
+    return changed
 
 
 if __name__ == "__main__":
