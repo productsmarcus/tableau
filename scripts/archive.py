@@ -64,9 +64,20 @@ def main():
     archive_feed(msgs)
     now = datetime.now(timezone.utc).timestamp()
     added = 0
+    real = lambda m: (tag(m["message"]) or {}).get("dry") not in ("1", "true")
+    kept = []
     for g in groups:
         if not any((tag(m["message"]) or {}).get("e") in START for m in g):
             continue
+        if not any(real(m) for m in g):   # moment entièrement à blanc (essai) : pas de replay
+            rid = datetime.fromtimestamp(g[0]["time"], PARIS).strftime("%Y-%m-%d_%H%M")
+            path = os.path.join(OUT, rid + ".json")
+            if os.path.exists(path):
+                os.remove(path); print("essai à blanc retiré", rid)
+            continue
+        kept.append(g)
+    for gi, g in enumerate(kept):
+        nxt = kept[gi + 1][0]["time"] - BEFORE if gi + 1 < len(kept) else float("inf")
         first, last = g[0]["time"], g[-1]["time"]
         if now - last < GAP:          # encore en cours : on attendra le prochain passage
             continue
@@ -86,11 +97,15 @@ def main():
                 open_.add((t.get("d"), t.get("n")))
             elif t.get("e") == "cancel":
                 open_.discard((t.get("d"), t.get("n")))
-        suite = []                    # leur première annulation ensuite (une seule par numéro)
-        for m in msgs:
+        days_g = {(tag(m["message"]) or {}).get("d") for m in g} - {None}
+        suite, seen_c = [], set()     # annulations réelles qui suivent, jusqu'au moment suivant : numéros réservés pendant le moment
+        for m in msgs:                # et anciennes places remplacées (une seule par numéro)
             t = tag(m["message"]) or {}
-            if m["time"] > end and m["topic"] == "laressourcerie" and t.get("e") == "cancel" and (t.get("d"), t.get("n")) in open_:
-                suite.append(m); open_.discard((t.get("d"), t.get("n")))
+            if m["time"] <= end or m["time"] >= nxt or m["topic"] != "laressourcerie" or t.get("e") != "cancel" or not real(m):
+                continue
+            k = (t.get("d"), t.get("n"))
+            if (k in open_ or t.get("d") in days_g) and k not in seen_c:
+                suite.append(m); seen_c.add(k); open_.discard(k)
         if os.path.exists(path):      # déjà enregistré : on complète seulement la suite
             with open(path, encoding="utf-8") as f:
                 old = json.load(f)
