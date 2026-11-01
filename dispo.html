@@ -50,7 +50,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
 <div id="legend"><span><i class="sw" style="background:var(--green)"></i>numéro libre</span><span><i class="sw" style="background:#ffe23a"></i>vient de se libérer</span><span><i class="sw" style="background:var(--red)"></i>vient d'être pris</span><span><i class="sw" style="background:var(--blue)"></i>déjà à N ou L</span><span><i class="sw" style="background:#eef1ee"></i>pris</span></div>
 </div>
 <main id="days"><div class="empty">En attente du premier relevé du profil observateur…</div></main>
-<section class="mv"><div class="box"><h2>10 derniers mouvements</h2><div class="r hd"><div>heure</div><div>🟨 libéré</div><div>🟥 pris</div></div><div id="mvl"><div class="none">aucun mouvement vu dans les 12 dernières heures</div></div></div></section>
+<section class="mv"><div class="box"><h2>Derniers mouvements (<span id="mvc">0</span>/100)</h2><div class="r hd"><div>heure</div><div>🟨 libéré</div><div>🟥 pris</div></div><div id="mvl" style="max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="none">aucun mouvement vu dans les 12 dernières heures</div></div></div></section>
 <footer>Relevé en continu par un profil observateur (environ une minute par tour), publié seulement quand quelque chose change, et au moins toutes les 30 minutes. Places N et L : point de départ du dernier contrôle, puis réservations et annulations reçues en direct.</footer>
 <script>
 "use strict";
@@ -75,8 +75,8 @@ function addMoves(a,b){ if(!a||!b) return; const pa={}; a.days.forEach(z=>pa[z.d
     const N=Array.isArray(nv)?nv:(nv==="absent"?[]:null), O=Array.isArray(ov)?ov:(ov==="absent"?[]:null); if(!N||!O) return;
     const lib=N.filter(n=>!O.includes(n)), pri=O.filter(n=>!N.includes(n));
     if(lib.length) MV.push({t:b.t,d:z.d,h,k:"lib",n:lib}); if(pri.length) MV.push({t:b.t,d:z.d,h,k:"pri",n:pri}); }); });
-  if(MV.length>50) MV=MV.slice(-50); }
-function renderMoves(){ const L=MV.slice(-10).reverse(); if(!L.length) return; const top=L[0].t+L[0].d+L[0].h+L[0].k;
+  if(MV.length>100) MV=MV.slice(-100); }
+function renderMoves(){ const L=MV.slice(-100).reverse(); $("mvc").textContent=L.length; if(!L.length) return; const top=L[0].t+L[0].d+L[0].h+L[0].k;
   const txt=m=>dfr(m.d).replace(".","")+" "+m.h+" · <b>"+m.n.map(pad).join(" ")+"</b>";
   $("mvl").innerHTML=L.map((m,i)=>`<div class="r${i===0&&mvTop!==null&&top!==mvTop?" nw":""}"><div class="tm">${new Date(m.t).toLocaleTimeString("fr-FR")}</div><div class="${m.k==="lib"?"lib":""}">${m.k==="lib"?txt(m):""}</div><div class="${m.k==="pri"?"pri":""}">${m.k==="pri"?txt(m):""}</div></div>`).join("");
   mvTop=top; }
