@@ -129,9 +129,10 @@ function handle(m){
     cls = g.e==="book" ? "ev-book" : g.e==="cancel" ? "ev-cancel" : g.e==="form" ? "ev-form" : "ev-choice";
     if(g.d && g.n!=null && (g.e==="choice"||g.e==="form"||g.e==="book")){
       const R = races[g.d] || (races[g.d] = {}); const x = R[g.n] || (R[g.n] = {choice:new Set(), form:new Set(), won:null});
-      if(g.e==="choice") x.choice.add(role); if(g.e==="form") x.form.add(role); if(g.e==="book" && !g.dry) x.won = role;
+      if(g.e==="choice") x.choice.add(role); if(g.e==="form") x.form.add(role); if(g.e==="book" && !g.dry){ x.won = role; x.cancelled = false; }
       if(g.e!=="book"){ races._last = (!races._lastT || tt >= races._lastT) ? g.d : races._last; races._lastT = Math.max(races._lastT||0, tt); }
     }
+    if(g.e==="cancel" && g.d && g.n!=null && !g.dry && races[g.d] && races[g.d][g.n] && races[g.d][g.n].won){ races[g.d][g.n].cancelled = true; }
     if((g.e==="book"||g.e==="cancel") && g.d && g.n!=null){
       const kind = g.e==="cancel" ? "annulation" : /^gnat/.test(role) ? "rattrapage" : "réservation";
       hist.unshift({t:tt, role, d:g.d, n:g.n, kind, dry:!!g.dry});
@@ -171,7 +172,7 @@ function render(){
   const d = races._last; const R = d ? races[d] : null;
   $("curdate").textContent = d ? "séance du " + dfr(d) : "aucune activité d'ouverture récente";
   $("nums").innerHTML = Array.from({length:12}, (_,i) => i+1).map(n => { const x = R && R[n];
-    return `<div class="num${x&&x.won?" won":""}"><small>Créneau</small><b>${pad(n)}</b>${x ? `<small>${x.choice.size} choisi · ${x.form.size} form.</small>${x.won?`<small><b style="font-size:12px;color:var(--green)">✔ ${x.won}</b></small>`:""}` : `<small>–</small>`}</div>`; }).join("");
+    return `<div class="num${x&&x.won&&!x.cancelled?" won":""}"><small>Créneau</small><b>${pad(n)}</b>${x ? `<small>${x.choice.size} choisi · ${x.form.size} form.</small>${x.won?(x.cancelled?`<small><s>${x.won}</s> <span style="color:var(--red)">annulé</span></small>`:`<small><b style="font-size:12px;color:var(--green)">✔ ${x.won}</b></small>`):""}` : `<small>–</small>`}</div>`; }).join("");
   // historique
   $("hist").innerHTML = hist.slice(0,60).map(h => `<tr><td>${hm(h.t)}</td><td>${h.role}</td><td>${dfr(h.d)}</td><td>${pad(h.n)}</td><td class="${h.kind==="annulation"?"ev-cancel":"ev-book"}">${h.kind}${h.dry?" (blanc)":""}</td></tr>`).join("") || `<tr><td class="mute" colspan="5">Rien depuis 12 h.</td></tr>`;
   // fil
