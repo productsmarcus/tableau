@@ -91,13 +91,13 @@ tr.absent td{color:var(--mute);opacity:.6}
 <script>
 "use strict";
 /* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
-const SNAP = { at: "2026-11-02T08:21:00+01:00", label: "état relevé par Claude le lun. 02/11 à 08:21" };
+const SNAP = { at: "2026-11-02T14:31:00+01:00", label: "état relevé par Claude le lun. 02/11 à 14:31 (après test de redémarrage du PC bureau)" };
 const P = [
  // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
  ["nat1","maison","N","01","v22o","pause","2026-11-01T23:54:02+01:00",84,1],
  ["nat5","maison","N","01","v22o","pause","2026-11-01T23:53:55+01:00",108,1],
  ["lal1","maison","L","01","v22o","pause","2026-11-01T23:54:28+01:00",92,1],
- ["obs1","bureau","N","observateur (relevé des créneaux)","v22m.3",0,"2026-11-02T08:10:25+01:00",140,1],
+ ["obs1","bureau","N","observateur (relevé des créneaux)","v22m.3",0,"2026-11-02T14:29:30+01:00",140,1],
  ["nat7","bureau","N","01","v22m.3","pause","2026-11-01T23:53:39+01:00",112,1],
  ["nat8","bureau","N","01","v22o","pause","2026-11-01T23:53:32+01:00",114,1],["nat9","bureau","N","01","v22o","pause","2026-11-01T23:53:24+01:00",116,1],["nat10","bureau","N","01","v22o","pause","2026-11-01T23:53:18+01:00",118,1],
  ["lal5","bureau","L","01","v22o","pause","2026-11-01T23:52:55+01:00",120,1],["lal6","bureau","L","01","v22o","pause","2026-11-01T23:52:49+01:00",122,1],["lal7","bureau","L","01","v22o","pause","2026-11-01T23:52:44+01:00",124,1],
