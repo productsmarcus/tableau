@@ -34,13 +34,16 @@ main{padding:12px;display:grid;gap:12px;grid-template-columns:repeat(4,1fr);max-
 footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
 .demo{background:#7c3aed;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:3px}
 .cnt.c-soon{background:#e3ecfb;color:#1d4ed8}.cnt.c-err{background:#fde4e2;color:#b3261e}
-.dot.off{background:#ff8a80;box-shadow:0 0 6px #ff8a80}.empty{grid-column:1/-1;text-align:center;color:var(--mute);padding:30px}.mv{max-width:1100px;margin:0 auto 14px;padding:0 12px}.mv .box{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.dot.off{background:#ff8a80;box-shadow:0 0 6px #ff8a80}.empty{grid-column:1/-1;text-align:center;color:var(--mute);padding:30px}.mv{max-width:1400px;margin:0 auto 14px;padding:0 12px}.mv .box{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .mv h2{font-size:14px;margin:0;padding:8px 12px;background:#173b2c;color:#fff}
 .mv .r{display:grid;grid-template-columns:86px 1fr 1fr;border-bottom:1px solid var(--line);font-size:12px}.mv .r:last-child{border-bottom:0}
 .mv .r>div{padding:5px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mv .hd{font-weight:700;font-size:12px;color:var(--mute);background:#f7f9f7}
 .mv .tm{color:var(--mute);overflow:visible!important;text-overflow:clip!important;font-variant-numeric:tabular-nums}.mv .lib{background:#fff8c9}.mv .pri{background:#fde4e2}
 .mv .r.nw{animation:nw 1.6s ease}@keyframes nw{from{background:#fff3a0}to{background:transparent}}
 .mv .none{padding:12px;text-align:center;color:var(--mute);font-size:13px}
+.mvw{display:grid;grid-template-columns:1fr 270px;gap:12px;align-items:start}@media (max-width:760px){.mvw{grid-template-columns:1fr}}
+.st2{width:100%;border-collapse:collapse;font-size:12px}.st2 th,.st2 td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right}.st2 th:first-child,.st2 td:first-child{text-align:left}.st2 th{color:var(--mute);background:#f7f9f7;font-weight:700}.st2 b{font-size:14px}.st2 small{color:var(--mute)}.st2 tr.on td{background:#fff3e0}
+.stn{padding:6px 10px;font-size:11px;color:var(--mute);line-height:1.35}
 </style></head><body>
 <div id="top">
 <div class="demo" id="demob" style="display:none">MODE DÉMO – données fictives</div>
@@ -58,7 +61,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
 <div id="legend"><span><i class="sw" style="background:var(--green)"></i>numéro libre</span><span><i class="sw" style="background:#ffe23a"></i>vient de se libérer</span><span><i class="sw" style="background:var(--red)"></i>vient d'être pris</span><span><i class="sw" style="background:var(--blue)"></i>déjà à N ou L</span><span><i class="sw" style="background:#eef1ee"></i>pris</span></div>
 </div>
 <main id="days"><div class="empty">En attente du premier relevé du profil observateur…</div></main>
-<section class="mv"><div class="box"><h2>Derniers mouvements (<span id="mvc">0</span>)<span id="mvf" style="font-weight:400;font-size:12px;margin-left:8px"></span></h2><div class="r hd"><div>heure</div><div>🟨 libéré</div><div>🟥 pris</div></div><div id="mvl" style="max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="none">aucun mouvement vu dans les 12 dernières heures</div></div></div></section>
+<section class="mv"><div class="mvw"><div class="box"><h2>Derniers mouvements (<span id="mvc">0</span>)<span id="mvf" style="font-weight:400;font-size:12px;margin-left:8px"></span></h2><div class="r hd"><div>heure</div><div>🟨 libéré</div><div>🟥 pris</div></div><div id="mvl" style="max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="none">aucun mouvement vu dans les 12 dernières heures</div></div></div><div class="box"><h2>Activité par séance</h2><table class="st2"><thead><tr><th>Séance</th><th>🟨 libérés</th><th>🟥 pris</th></tr></thead><tbody id="stb"></tbody></table><div class="stn">Numéros vus libérés ou pris par d'autres usagers, d'après les relevés de l'observateur (tous horaires de la séance). Entre parenthèses : nos propres réservations et annulations, déjà retirées du total.</div></div></div></section>
 <footer>Relevé en continu par un profil observateur (un tour toutes les 10 secondes environ), publié seulement quand quelque chose change, et au moins toutes les 30 minutes. Places N et L : point de départ du dernier contrôle, puis réservations et annulations reçues en direct.</footer>
 <script>
 "use strict";
@@ -67,17 +70,23 @@ const PLACES0={"2026-11-03":{N:[4],L:[5]},"2026-11-04":{N:[10],L:[4]},"2026-11-0
 const OPEN={2:"14:00",3:"14:00",4:"14:00",6:"10:00"};
 const $=id=>document.getElementById(id); const pad=n=>String(n).padStart(2,"0");
 const places=JSON.parse(JSON.stringify(PLACES0)); const snapT=Date.parse(SNAP.at);
-const MVFROM=1793538353463; /* premier relevé correct (v22m.1) */ let MV=[], mvTop=null, MVF=null; const MVK=new Set(); const MVCAP=2000; let cur=null, prev=null, es=null, lastId=null; const seen=new Set();
+const MVFROM=1793538353463; /* premier relevé correct (v22m.1) */ let MV=[], mvTop=null, MVF=null; const MVK=new Set(); const MVCAP=2000; let cur=null, prev=null, es=null, lastId=null; const seen=new Set(); const OURS=new Map();
 const dfr=k=>{const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"});};
 const parseTag=s=>{const m=String(s||"").match(/#lg ([^\n]+)/); if(!m) return null; const o={}; m[1].split(" ").forEach(kv=>{const i=kv.indexOf("="); if(i>0) o[kv.slice(0,i)]=kv.slice(i+1);}); if(o.n!=null) o.n=+o.n; if(o.t) o.t=+o.t; return o;};
 function handle(m){
   if(!m||m.event!=="message"||seen.has(m.id)) return; seen.add(m.id); lastId=m.id;
   if(m.topic==="laressourcerie-dispo"){ try{ const x=JSON.parse(m.message); if(x.t<MVFROM) return; if(!cur||x.t>=cur.t){ addMoves(cur,x); prev=cur; cur=x; } }catch(e){} }
-  else { const g=parseTag(m.message); if(g&&(g.e==="book"||g.e==="cancel")&&g.d&&g.n!=null&&!g.dry&&(g.p==="N"||g.p==="L")&&(g.t||0)>snapT){
+  else { const g=parseTag(m.message); oursAdd(m.id,g); if(g&&(g.e==="book"||g.e==="cancel")&&g.d&&g.n!=null&&!g.dry&&(g.p==="N"||g.p==="L")&&(g.t||0)>snapT){
       const pl=places[g.d]||(places[g.d]={N:[],L:[]}); const a=pl[g.p];
       if(g.e==="book"&&!a.includes(g.n)) a.push(g.n); if(g.e==="cancel"){ const i=a.indexOf(g.n); if(i>=0) a.splice(i,1);} } }
   render();
 }
+function oursAdd(id,g){ if(!g||!g.d||g.n==null||g.dry||(g.e!=="book"&&g.e!=="cancel")) return; const t=g.t||0; if(t<MVFROM) return; OURS.set(id,{d:g.d,k:g.e==="book"?"pri":"lib"}); }
+function renderStats(){ const el=$("stb"); if(!el) return; const ds=[...new Set([...(cur?cur.days.map(z=>z.d):[]),...MV.map(m=>m.d)])].filter(d=>!cur||cur.days.some(z=>z.d===d)).sort();
+  if(!ds.length){ el.innerHTML='<tr><td colspan="3" class="mute">–</td></tr>'; return; }
+  el.innerHTML=ds.map(d=>{ let L=0,P=0,oL=0,oP=0; MV.forEach(m=>{ if(m.d!==d) return; if(m.k==="lib") L+=m.n.length; else P+=m.n.length; }); OURS.forEach(o=>{ if(o.d!==d) return; if(o.k==="lib") oL++; else oP++; });
+    const c=(tot,o)=>`<b>${Math.max(0,tot-o)}</b>${o?` <small>(+${o} nous)</small>`:""}`;
+    return `<tr class="${MVF===d?"on":""}"><td>${dfr(d)}</td><td>${c(L,oL)}</td><td>${c(P,oP)}</td></tr>`; }).join(""); }
 function addMoves(a,b){ if(!a||!b) return; const pa={}; a.days.forEach(z=>pa[z.d]=z.x||{});
   b.days.forEach(z=>{ const oa=pa[z.d]; if(!oa||!z.x) return; Object.keys(z.x).forEach(h=>{ const nv=z.x[h], ov=oa[h];
     const N=Array.isArray(nv)?nv:(nv==="absent"?[]:null), O=Array.isArray(ov)?ov:(ov==="absent"?[]:null); if(!N||!O) return;
@@ -89,7 +98,8 @@ function mvTrim(){ MV.sort((a,b)=>a.t-b.t); if(MV.length>MVCAP) MV=MV.slice(-MVC
 /* historique des 4 séances affichées : archivé par GitHub (replays/moves/<date>.json) */
 function loadMoveFiles(){ const now=new Date(), ds=[]; for(let i=0;i<14&&ds.length<6;i++){ const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i); if(!OPEN[d.getDay()]) continue;
     ds.push(d.toLocaleDateString("fr-CA")); }
-  Promise.all(ds.map(d=>fetch("replays/moves/"+d+".json",{cache:"no-store"}).then(r=>r.ok?r.json():[]).catch(()=>[]))).then(all=>{ all.flat().forEach(mvAdd); mvTrim(); render(); }); }
+  Promise.all(ds.map(d=>fetch("replays/moves/"+d+".json",{cache:"no-store"}).then(r=>r.ok?r.json():[]).catch(()=>[]))).then(all=>{ all.flat().forEach(mvAdd); mvTrim(); render(); });
+  Promise.all(ds.map(d=>fetch("replays/feed/"+d+".json",{cache:"no-store"}).then(r=>r.ok?r.json():[]).catch(()=>[]))).then(all=>{ all.flat().forEach(m=>oursAdd(m.id,parseTag(m.message))); render(); }); }
 function renderMoves(){ const shown=new Set(cur.days.map(z=>z.d)); if(MVF&&!shown.has(MVF)) MVF=null;
   const L=MV.filter(m=>shown.has(m.d)&&(!MVF||m.d===MVF)).slice().reverse(); $("mvc").textContent=L.length;
   $("mvf").innerHTML=MVF?`· filtre ${dfr(MVF)} <a href="#" onclick="MVF=null;render();return false" style="color:#fde68a">✕</a>`:"· touche une date pour filtrer";
@@ -103,7 +113,7 @@ function renderIdle(){ const now=window.__vt||Date.now(); const last=MV.length?M
   const d=Math.max(0,Math.floor((now-last)/1000)); el.textContent=pad(Math.floor(d/3600))+":"+pad(Math.floor(d%3600/60))+":"+pad(d%60);
   pl.className="pill p-idle"+(d<20?" fresh":""); pl.title="Dernier mouvement : "+new Date(last).toLocaleTimeString("fr-FR"); }
 function render(){ renderIdle();
-  if(!cur) return; renderMoves();
+  if(!cur) return; renderMoves(); renderStats();
   const age=Math.round(((window.__vt||Date.now())-cur.t)/1000);
   const u=$("upd"); u.textContent="Relevé par "+cur.by+" à "+new Date(cur.t).toLocaleTimeString("fr-FR")+" · il y a "+(age<90?age+" s":Math.round(age/60)+" min");
   u.className="pill p-upd"+(age>2400?" p-old":"");
