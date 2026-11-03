@@ -179,6 +179,7 @@ def archive_moves(msgs):
     for x in rel:
         if prev:
             pa = {z["d"]: (z.get("x") or {}) for z in prev.get("days", [])}
+            pz = {z["d"]: z for z in prev.get("days", [])}
             for z in x.get("days", []):
                 oa = pa.get(z["d"])
                 if oa is None or not z.get("x"):
@@ -187,7 +188,9 @@ def archive_moves(msgs):
                     N, O = _arr(nv), _arr(oa.get(h))
                     if N is None or O is None:
                         continue
-                    lib = [n for n in N if n not in O]
+                    zp = pz.get(z["d"]) or {}
+                    seen = None if (zp.get("va") or "v" not in zp) else (zp.get("v") or {}).get(h, [])
+                    lib = [n for n in N if n not in O and (seen is None or n in seen)]   # une première apparition n'est pas un désistement
                     pri = [n for n in O if n not in N]
                     for k, ns in (("lib", lib), ("pri", pri)):
                         if ns:

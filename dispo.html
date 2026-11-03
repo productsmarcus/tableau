@@ -29,7 +29,7 @@ main{padding:12px;display:grid;gap:12px;grid-template-columns:repeat(4,1fr);max-
 .nums{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
 .n{text-align:center;font-size:12px;font-weight:700;padding:3px 0;border-radius:5px;background:#eef1ee;color:#b9c2bb}
 .n.f{background:var(--green);color:#fff}.n.new{background:#ffe23a;color:#3a2e00;box-shadow:0 0 0 2px #fff,0 0 0 4px #e6c200}.n.gone{background:var(--red);color:#fff;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--red)}
-.n.me{background:var(--blue);color:#fff}
+.n.me{background:var(--blue);color:#fff}.n.u{background:transparent;color:#b9c2bb;border:1px dashed #cfd6d0}.n.x{background:repeating-linear-gradient(45deg,#eef1ee 0 4px,#d5dcd6 4px 8px);color:#8a958c}
 .note{font-size:11px;color:var(--mute);margin-top:4px}
 footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
 .demo{background:#7c3aed;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:3px}
@@ -58,7 +58,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
 </header>
 <div id="rbar"><span id="rtitle">Rejouer</span><span>⏱ <b id="rclock">–</b></span><span class="rprog"><i id="rprog"></i></span>
   <button id="rpause">⏸</button><button data-sp="1">×1</button><button data-sp="4" class="on">×4</button><button data-sp="10">×10</button><button id="rexit">✕ Retour au direct</button><span id="rmore" style="width:100%;text-align:center;font-weight:400"></span></div>
-<div id="legend"><span><i class="sw" style="background:var(--green)"></i>numéro libre</span><span><i class="sw" style="background:#ffe23a"></i>vient de se libérer</span><span><i class="sw" style="background:var(--red)"></i>vient d'être pris</span><span><i class="sw" style="background:var(--blue)"></i>déjà à N ou L</span><span><i class="sw" style="background:#eef1ee"></i>pris</span></div>
+<div id="legend"><span><i class="sw" style="background:var(--green)"></i>numéro libre</span><span><i class="sw" style="background:#ffe23a"></i>vient de se libérer</span><span><i class="sw" style="background:var(--red)"></i>vient d'être pris</span><span><i class="sw" style="background:var(--blue)"></i>déjà à N ou L</span><span><i class="sw" style="background:#eef1ee"></i>pris</span><span><i class="sw" style="background:transparent;border:1px dashed #b9c2bb"></i>– pas encore sorti</span><span><i class="sw" style="background:repeating-linear-gradient(45deg,#eef1ee 0 3px,#d5dcd6 3px 6px)"></i>pris sans avoir été vu</span></div>
 </div>
 <main id="days"><div class="empty">En attente du premier relevé du profil observateur…</div></main>
 <section class="mv"><div class="mvw"><div class="box"><h2>Derniers mouvements (<span id="mvc">0</span>)<span id="mvf" style="font-weight:400;font-size:12px;margin-left:8px"></span></h2><div class="r hd"><div>heure</div><div>🟨 libéré</div><div>🟥 pris</div></div><div id="mvl" style="max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="none">aucun mouvement vu dans les 12 dernières heures</div></div></div><div class="box"><h2>Activité par séance</h2><table class="st2"><thead><tr><th>Séance</th><th>🟨 libérés</th><th>🟥 pris</th></tr></thead><tbody id="stb"></tbody></table><div class="stn">Numéros vus libérés ou pris par d'autres usagers, d'après les relevés de l'observateur (tous horaires de la séance). Entre parenthèses : nos propres réservations et annulations, déjà retirées du total.</div></div></div></section>
@@ -70,7 +70,8 @@ const PLACES0={"2026-11-03":{N:[1],L:[4]},"2026-11-04":{N:[5],L:[4]},"2026-11-05
 const OPEN={2:"14:00",3:"14:00",4:"14:00",6:"10:00"};
 const $=id=>document.getElementById(id); const pad=n=>String(n).padStart(2,"0");
 const places=JSON.parse(JSON.stringify(PLACES0)); const snapT=Date.parse(SNAP.at);
-const MVFROM=1793538353463; /* premier relevé correct (v22m.1) */ let MV=[], mvTop=null, MVF=null; const MVK=new Set(); const MVCAP=2000; let cur=null, prev=null, es=null, lastId=null; const seen=new Set(); const OURS=new Map();
+const MVFROM=1793538353463; /* premier relevé correct (v22m.1) */ let MV=[], mvTop=null, MVF=null; const MVK=new Set(); const MVCAP=2000; let cur=null, prev=null, es=null, lastId=null; const seen=new Set(); const OURS=new Map(); const OSEEN=new Set();   /* numéros vus par nos profils : "d|n" */
+const seenOf=(z,h)=>{ if(!z||z.va||!z.v) return null; const a=(z.v[h]||[]).slice(); if(h===z.s) for(let n=1;n<=12;n++) if(OSEEN.has(z.d+"|"+n)&&!a.includes(n)) a.push(n); return a; };
 const dfr=k=>{const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"});};
 const parseTag=s=>{const m=String(s||"").match(/#lg ([^\n]+)/); if(!m) return null; const o={}; m[1].split(" ").forEach(kv=>{const i=kv.indexOf("="); if(i>0) o[kv.slice(0,i)]=kv.slice(i+1);}); if(o.n!=null) o.n=+o.n; if(o.t) o.t=+o.t; return o;};
 function handle(m){
@@ -81,16 +82,18 @@ function handle(m){
       if(g.e==="book"&&!a.includes(g.n)) a.push(g.n); if(g.e==="cancel"){ const i=a.indexOf(g.n); if(i>=0) a.splice(i,1);} } }
   render();
 }
-function oursAdd(id,g){ if(!g||!g.d||g.n==null||g.dry||(g.e!=="book"&&g.e!=="cancel")) return; const t=g.t||0; if(t<MVFROM) return; OURS.set(id,{d:g.d,k:g.e==="book"?"pri":"lib"}); }
+function oursAdd(id,g){ if(g&&g.d&&g.n!=null&&/^(choice|form|book|free)$/.test(g.e)) OSEEN.add(g.d+"|"+g.n);
+ if(!g||!g.d||g.n==null||g.dry||(g.e!=="book"&&g.e!=="cancel")) return; const t=g.t||0; if(t<MVFROM) return; OURS.set(id,{d:g.d,k:g.e==="book"?"pri":"lib"}); }
 function renderStats(){ const el=$("stb"); if(!el) return; const ds=[...new Set([...(cur?cur.days.map(z=>z.d):[]),...MV.map(m=>m.d)])].filter(d=>!cur||cur.days.some(z=>z.d===d)).sort();
   if(!ds.length){ el.innerHTML='<tr><td colspan="3" class="mute">–</td></tr>'; return; }
   el.innerHTML=ds.map(d=>{ let L=0,P=0,oL=0,oP=0; MV.forEach(m=>{ if(m.d!==d) return; if(m.k==="lib") L+=m.n.length; else P+=m.n.length; }); OURS.forEach(o=>{ if(o.d!==d) return; if(o.k==="lib") oL++; else oP++; });
     const c=(tot,o)=>`<b>${Math.max(0,tot-o)}</b>${o?` <small>(+${o} nous)</small>`:""}`;
     return `<tr class="${MVF===d?"on":""}"><td>${dfr(d)}</td><td>${c(L,oL)}</td><td>${c(P,oP)}</td></tr>`; }).join(""); }
-function addMoves(a,b){ if(!a||!b) return; const pa={}; a.days.forEach(z=>pa[z.d]=z.x||{});
+function addMoves(a,b){ if(!a||!b) return; const pa={}, za={}; a.days.forEach(z=>{pa[z.d]=z.x||{}; za[z.d]=z;});
   b.days.forEach(z=>{ const oa=pa[z.d]; if(!oa||!z.x) return; Object.keys(z.x).forEach(h=>{ const nv=z.x[h], ov=oa[h];
     const N=Array.isArray(nv)?nv:(nv==="absent"?[]:null), O=Array.isArray(ov)?ov:(ov==="absent"?[]:null); if(!N||!O) return;
-    const lib=N.filter(n=>!O.includes(n)), pri=O.filter(n=>!N.includes(n));
+    const sa=seenOf(za[z.d],h);   /* v22m.4 : une première apparition n'est pas un désistement */
+    const lib=N.filter(n=>!O.includes(n)&&(!sa||sa.includes(n))), pri=O.filter(n=>!N.includes(n));
     if(lib.length) mvAdd({t:b.t,d:z.d,h,k:"lib",n:lib}); if(pri.length) mvAdd({t:b.t,d:z.d,h,k:"pri",n:pri}); }); });
   mvTrim(); }
 function mvAdd(m){ const k=m.t+"|"+m.d+"|"+m.h+"|"+m.k; if(MVK.has(k)) return false; MVK.add(k); MV.push(m); return true; }
@@ -124,7 +127,12 @@ function render(){ renderIdle();
       let c; if(Array.isArray(v)) c=v.length?`<span class="cnt c-ok">${v.length}/12 libres</span>`:`<span class="cnt c-full">complet</span>`;
       else c=v==="absent"?`<span class="cnt c-full">complet</span>`:v==="bientôt"?`<span class="cnt c-soon">pas encore ouvert</span>`:v==="fermé"?`<span class="cnt c-wait">fermé</span>`:`<span class="cnt c-err">?</span>`;
       const free=Array.isArray(v)?v:[]; const ov=pv[z.d]?pv[z.d][t]:undefined; const old=Array.isArray(ov)?ov:(ov==="absent"?[]:null);
-      const nums=Array.from({length:12},(_,i)=>i+1).map(n=>`<div class="n${me.includes(n)&&!free.includes(n)&&t===z.s?" me":free.includes(n)?(old&&!old.includes(n)?" new":" f"):(old&&old.includes(n)?" gone":"")}">${pad(n)}</div>`).join("");
+      const sn=seenOf(z,t); const nowv=window.__vt||Date.now();   /* v22m.4 : suivi des numéros déjà sortis */
+      if(sn&&!sn.length&&!free.length&&!me.length) c=`<span class="cnt c-soon">pas encore sorti</span>`;
+      const closed=sn&&((!free.length&&sn.length>0)||(z.f&&z.f[t]&&nowv-z.f[t]>900000));
+      const nums=Array.from({length:12},(_,i)=>i+1).map(n=>{ const nev=sn&&!free.includes(n)&&!sn.includes(n)&&!(me.includes(n)&&t===z.s);
+        if(nev) return closed?`<div class="n x" title="pris sans avoir été vu">${pad(n)}</div>`:`<div class="n u" title="pas encore sorti">–</div>`;
+        return `<div class="n${me.includes(n)&&!free.includes(n)&&t===z.s?" me":free.includes(n)?(old&&!old.includes(n)?" new":" f"):(old&&old.includes(n)?" gone":"")}">${pad(n)}</div>`; }).join("");
       return `<div class="slot"><div class="st"><b>${t}</b>${c}</div><div class="nums">${nums}</div></div>`;}).join("");
     return `<section class="day"><div class="dh" style="cursor:pointer${MVF===z.d?";background:#b45309":""}" onclick="MVF=MVF===\'${z.d}\'?null:\'${z.d}\';render()" title="filtrer les mouvements de cette séance"><b>${dfr(z.d)}</b><span>séance de ${z.s}</span></div><div class="held">Places actuelles : <b>${held}</b></div>${rows}</section>`;}).join("");
 }
