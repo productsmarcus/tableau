@@ -40,6 +40,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
 .mv .r>div{padding:5px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mv .hd{font-weight:700;font-size:12px;color:var(--mute);background:#f7f9f7}
 .mv .tm{color:var(--mute);overflow:visible!important;text-overflow:clip!important;font-variant-numeric:tabular-nums}.mv .lib{background:#fff8c9}.mv .pri{background:#fde4e2}
 .mv .r.nw{animation:nw 1.6s ease}@keyframes nw{from{background:#fff3a0}to{background:transparent}}
+.mv .fl{grid-column:2/4;background:#ede9fe;color:#4c1d95}
 .mv .none{padding:12px;text-align:center;color:var(--mute);font-size:13px}
 .mvw{display:grid;grid-template-columns:1fr 270px;gap:12px;align-items:start}@media (max-width:760px){.mvw{grid-template-columns:1fr}}
 .st2{width:100%;border-collapse:collapse;font-size:12px}.st2 th,.st2 td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right}.st2 th:first-child,.st2 td:first-child{text-align:left}.st2 th{color:var(--mute);background:#f7f9f7;font-weight:700}.st2 b{font-size:14px}.st2 small{color:var(--mute)}.st2 tr.on td{background:#fff3e0}
@@ -61,7 +62,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
 <div id="legend"><span><i class="sw" style="background:var(--green)"></i>numéro libre</span><span><i class="sw" style="background:#ffe23a"></i>vient de se libérer</span><span><i class="sw" style="background:var(--red)"></i>vient d'être pris</span><span><i class="sw" style="background:var(--blue)"></i>déjà à N ou L</span><span><i class="sw" style="background:#eef1ee"></i>pris</span><span><i class="sw" style="background:transparent;border:1px dashed #b9c2bb"></i>– pas encore sorti</span><span><i class="sw" style="background:repeating-linear-gradient(45deg,#eef1ee 0 3px,#d5dcd6 3px 6px)"></i>pris sans avoir été vu</span></div>
 </div>
 <main id="days"><div class="empty">En attente du premier relevé du profil observateur…</div></main>
-<section class="mv"><div class="mvw"><div class="box"><h2>Derniers mouvements (<span id="mvc">0</span>)<span id="mvf" style="font-weight:400;font-size:12px;margin-left:8px"></span></h2><div class="r hd"><div>heure</div><div>🟨 libéré</div><div>🟥 pris</div></div><div id="mvl" style="max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="none">aucun mouvement vu dans les 12 dernières heures</div></div></div><div class="box"><h2>Activité par séance</h2><table class="st2"><thead><tr><th>Séance</th><th>🟨 libérés</th><th>🟥 pris</th></tr></thead><tbody id="stb"></tbody></table><div class="stn">Numéros vus libérés ou pris par d'autres usagers, d'après les relevés de l'observateur (tous horaires de la séance). Entre parenthèses : nos propres réservations et annulations, déjà retirées du total.</div></div></div></section>
+<section class="mv"><div class="mvw"><div class="box"><h2>Derniers mouvements (<span id="mvc">0</span>)<span id="mvf" style="font-weight:400;font-size:12px;margin-left:8px"></span></h2><div class="r hd"><div>heure</div><div>🟨 libéré</div><div>🟥 pris</div></div><div id="mvl" style="max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="none">aucun mouvement vu dans les 12 dernières heures</div></div></div><div class="box"><h2>Activité par séance</h2><table class="st2"><thead><tr><th>Séance</th><th>🟨 libérés</th><th>🟥 pris</th></tr></thead><tbody id="stb"></tbody></table><div class="stn">Numéros vus libérés ou pris par d'autres usagers, d'après les relevés de l'observateur (tous horaires de la séance). Entre parenthèses : nos propres réservations et annulations, déjà retirées du total. ⚡ Mouvement éclair : un numéro pris puis libéré à nouveau en moins de 30 s (automate qui teste, ou lecture douteuse) ; il est montré à part et n'est pas compté.</div></div></div></section>
 <footer>Relevé en continu par un profil observateur (un tour toutes les 10 secondes environ, puis toutes les 1 à 2 secondes pendant 30 minutes dès que le créneau principal d’une nouvelle séance sort), publié seulement quand quelque chose change, et au moins toutes les 30 minutes. Places N et L : point de départ du dernier contrôle, puis réservations et annulations reçues en direct.</footer>
 <script>
 "use strict";
@@ -70,7 +71,7 @@ const PLACES0={"2026-11-03":{N:[1],L:[4]},"2026-11-04":{N:[5],L:[4]},"2026-11-05
 const OPEN={2:"14:00",3:"14:00",4:"14:00",6:"10:00"};
 const $=id=>document.getElementById(id); const pad=n=>String(n).padStart(2,"0");
 const places=JSON.parse(JSON.stringify(PLACES0)); const snapT=Date.parse(SNAP.at);
-const MVFROM=1793538353463; /* premier relevé correct (v22m.1) */ let MV=[], mvTop=null, MVF=null; const MVK=new Set(); const MVCAP=2000; let cur=null, prev=null, es=null, lastId=null; const seen=new Set(); const OURS=new Map(); const OSEEN=new Set();   /* numéros vus par nos profils : "d|n" */
+const MVFROM=1793538353463; /* premier relevé correct (v22m.1) */ let MV=[], mvTop=null, MVF=null; const MVK=new Set(); const MVCAP=2000; let cur=null, prev=null, es=null, lastId=null; const seen=new Set(); const OURS=new Map(); const OSEEN=new Set(); const OTAGS=[];   /* tous nos messages #lg (d, n, t) : pour ne pas classer nos propres gestes en mouvement éclair */   /* numéros vus par nos profils : "d|n" */
 const seenOf=(z,h)=>{ if(!z||z.va||!z.v) return null; const a=(z.v[h]||[]).slice(); if(h===z.s) for(let n=1;n<=12;n++) if(OSEEN.has(z.d+"|"+n)&&!a.includes(n)) a.push(n); return a; };
 const dfr=k=>{const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"});};
 const parseTag=s=>{const m=String(s||"").match(/#lg ([^\n]+)/); if(!m) return null; const o={}; m[1].split(" ").forEach(kv=>{const i=kv.indexOf("="); if(i>0) o[kv.slice(0,i)]=kv.slice(i+1);}); if(o.n!=null) o.n=+o.n; if(o.t) o.t=+o.t; return o;};
@@ -82,11 +83,15 @@ function handle(m){
       if(g.e==="book"&&!a.includes(g.n)) a.push(g.n); if(g.e==="cancel"){ const i=a.indexOf(g.n); if(i>=0) a.splice(i,1);} } }
   render();
 }
-function oursAdd(id,g){ if(g&&g.d&&g.n!=null&&/^(choice|form|book|free)$/.test(g.e)) OSEEN.add(g.d+"|"+g.n);
+function oursAdd(id,g){ if(g&&g.d&&g.n!=null&&/^(choice|form|book|free)$/.test(g.e)) OSEEN.add(g.d+"|"+g.n); if(g&&g.d&&g.n!=null&&g.t) OTAGS.push({d:g.d,n:g.n,t:g.t});
  if(!g||!g.d||g.n==null||g.dry||(g.e!=="book"&&g.e!=="cancel")) return; const t=g.t||0; if(t<MVFROM) return; OURS.set(id,{d:g.d,k:g.e==="book"?"pri":"lib"}); }
+/* mouvement éclair : un numéro pris puis libéré à nouveau en moins de 30 s (hors nos propres gestes) — ni prise ni désistement, noté à part */
+const FLASH=30000;
+function flashes(){ const F=[], skip=new Set(); MV.forEach((m,i)=>{ if(m.k!=="pri") return; m.n.forEach(n=>{ const j=MV.findIndex((l,jj)=>jj>i&&l.k==="lib"&&l.d===m.d&&l.h===m.h&&l.n.includes(n)&&l.t>m.t&&l.t-m.t<=FLASH); if(j<0) return; const l=MV[j];
+    if(OTAGS.some(o=>o.d===m.d&&o.n===n&&o.t>=m.t-60000&&o.t<=l.t+60000)) return; skip.add(i+"|"+n); skip.add(j+"|"+n); F.push({t:l.t,t0:m.t,d:m.d,h:m.h,n}); }); }); return {F,skip}; }
 function renderStats(){ const el=$("stb"); if(!el) return; const ds=[...new Set([...(cur?cur.days.map(z=>z.d):[]),...MV.map(m=>m.d)])].filter(d=>!cur||cur.days.some(z=>z.d===d)).sort();
   if(!ds.length){ el.innerHTML='<tr><td colspan="3" class="mute">–</td></tr>'; return; }
-  el.innerHTML=ds.map(d=>{ let L=0,P=0,oL=0,oP=0; MV.forEach(m=>{ if(m.d!==d) return; if(m.k==="lib") L+=m.n.length; else P+=m.n.length; }); OURS.forEach(o=>{ if(o.d!==d) return; if(o.k==="lib") oL++; else oP++; });
+  const sk=flashes().skip; el.innerHTML=ds.map(d=>{ let L=0,P=0,oL=0,oP=0; MV.forEach((m,i)=>{ if(m.d!==d) return; const k=m.n.filter(n=>!sk.has(i+"|"+n)).length; if(m.k==="lib") L+=k; else P+=k; }); OURS.forEach(o=>{ if(o.d!==d) return; if(o.k==="lib") oL++; else oP++; });
     const c=(tot,o)=>`<b>${Math.max(0,tot-o)}</b>${o?` <small>(+${o} nous)</small>`:""}`;
     return `<tr class="${MVF===d?"on":""}"><td>${dfr(d)}</td><td>${c(L,oL)}</td><td>${c(P,oP)}</td></tr>`; }).join(""); }
 function addMoves(a,b){ if(!a||!b) return; const pa={}, za={}; a.days.forEach(z=>{pa[z.d]=z.x||{}; za[z.d]=z;});
@@ -104,12 +109,12 @@ function loadMoveFiles(){ const now=new Date(), ds=[]; for(let i=0;i<14&&ds.leng
   Promise.all(ds.map(d=>fetch("replays/moves/"+d+".json",{cache:"no-store"}).then(r=>r.ok?r.json():[]).catch(()=>[]))).then(all=>{ all.flat().forEach(mvAdd); mvTrim(); render(); });
   Promise.all(ds.map(d=>fetch("replays/feed/"+d+".json",{cache:"no-store"}).then(r=>r.ok?r.json():[]).catch(()=>[]))).then(all=>{ all.flat().forEach(m=>oursAdd(m.id,parseTag(m.message))); render(); }); }
 function renderMoves(){ const shown=new Set(cur.days.map(z=>z.d)); if(MVF&&!shown.has(MVF)) MVF=null;
-  const L=MV.filter(m=>shown.has(m.d)&&(!MVF||m.d===MVF)).slice().reverse(); $("mvc").textContent=L.length;
+  const fx=flashes(); const L=MV.map((m,i)=>Object.assign({},m,{n:m.n.filter(n=>!fx.skip.has(i+"|"+n))})).filter(m=>m.n.length).concat(fx.F.map(f=>({t:f.t,d:f.d,h:f.h,k:"fl",n:[f.n],dt:Math.round((f.t-f.t0)/1000)}))).filter(m=>shown.has(m.d)&&(!MVF||m.d===MVF)).sort((a,b)=>a.t-b.t).reverse(); $("mvc").textContent=L.length;
   $("mvf").innerHTML=MVF?`· filtre ${dfr(MVF)} <a href="#" onclick="MVF=null;render();return false" style="color:#fde68a">✕</a>`:"· touche une date pour filtrer";
   if(!L.length){ $("mvl").innerHTML='<div class="none">aucun mouvement enregistré pour ces séances</div>'; return; } const top=L[0].t+L[0].d+L[0].h+L[0].k;
   const tday=new Date().toDateString(); const tf=t=>{ const d=new Date(t); return d.toDateString()===tday?d.toLocaleTimeString("fr-FR"):d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); };
   const txt=m=>dfr(m.d).replace(".","")+" "+m.h+" · <b>"+m.n.map(pad).join(" ")+"</b>";
-  $("mvl").innerHTML=L.map((m,i)=>`<div class="r${i===0&&mvTop!==null&&top!==mvTop?" nw":""}"><div class="tm">${tf(m.t)}</div><div class="${m.k==="lib"?"lib":""}">${m.k==="lib"?txt(m):""}</div><div class="${m.k==="pri"?"pri":""}">${m.k==="pri"?txt(m):""}</div></div>`).join("");
+  $("mvl").innerHTML=L.map((m,i)=>m.k==="fl"?`<div class="r${i===0&&mvTop!==null&&top!==mvTop?" nw":""}"><div class="tm">${tf(m.t)}</div><div class="fl">⚡ mouvement éclair · ${txt(m)} pris puis relibéré en ${m.dt} s</div></div>`:`<div class="r${i===0&&mvTop!==null&&top!==mvTop?" nw":""}"><div class="tm">${tf(m.t)}</div><div class="${m.k==="lib"?"lib":""}">${m.k==="lib"?txt(m):""}</div><div class="${m.k==="pri"?"pri":""}">${m.k==="pri"?txt(m):""}</div></div>`).join("");
   mvTop=top; }
 function renderIdle(){ const now=window.__vt||Date.now(); const last=MV.length?MV[MV.length-1].t:null; const el=$("idle"), pl=$("idlep");
   if(!last){ el.textContent="plus de 12 h"; pl.className="pill p-idle"; return; }
