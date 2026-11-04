@@ -91,7 +91,7 @@ tr.absent td{color:var(--mute);opacity:.6}
 <script>
 "use strict";
 /* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
-const SNAP = { at: "2026-11-04T17:52:00+01:00", label: "état relevé par Claude le mer. 04/11 à 17:52 (v22s déployée en pause sur les 28 profils de course : 4 profils sur chacun des 01–04, ramasseurs, répartition sur les libres en mode 2 ; relance prévue jeudi avant 13:59 sur go ; obs1 et gnat1-4 actifs)" };
+const SNAP = { at: "2026-11-04T23:23:00+01:00", label: "état relevé par Claude le mer. 04/11 à 23:23 (v22t : guetteurs Nathalie qui proposent l'ancienne place à Lalia via la veille lal3 ; lal4 guetteur du samedi pour Lalia ; 28 profils de course en v22s, en pause, relance prévue jeudi avant 13:59 sur go)" };
 const P = [
  // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
  ["obs1","maison","N","observateur (relevé des créneaux) · profil nat1","v22m.7",0,"2026-11-03T23:50:38+01:00",140,1],
@@ -125,15 +125,15 @@ const P = [
  ["nat3","maison","N","ramasseur (plus petit libre, 1,5 s après la sortie) · maison","v22s","pause","2026-11-04T15:14:00+01:00",88,1],
  ["lal1","maison","L","mode 1 : 05 · mode 2 : répartition sur les libres · maison","v22s","pause","2026-11-04T15:14:00+01:00",92,1],
  ["lal2","maison","L","mode 1 : 06 · mode 2 : répartition sur les libres · maison","v22s","pause","2026-11-04T15:14:00+01:00",94,1],
- ["gnat1","maison","N","rattr. samedi · sommeil pendant les ouvertures","v22r",1,"2026-11-04T10:12:38+01:00",100,1],
- ["gnat2","maison","N","rattr. mardi · sommeil pendant les ouvertures","v22r",1,"2026-11-04T10:12:57+01:00",102,1],
- ["gnat3","maison","N","rattr. mercredi · sommeil pendant les ouvertures","v22r",1,"2026-11-04T10:13:12+01:00",104,1],
- ["gnat4","maison","N","rattr. jeudi · sommeil pendant les ouvertures","v22r",1,"2026-11-04T10:13:28+01:00",106,1],
+ ["gnat1","maison","N","rattr. samedi · propose l'ancienne place à Lalia","v22t",1,"2026-11-04T23:15:33+01:00",100,1],
+ ["gnat2","maison","N","rattr. mardi · propose l'ancienne place à Lalia","v22t",1,"2026-11-04T23:16:41+01:00",102,1],
+ ["gnat3","maison","N","rattr. mercredi · propose l'ancienne place à Lalia","v22t",1,"2026-11-04T23:17:47+01:00",104,1],
+ ["gnat4","maison","N","rattr. jeudi · propose l'ancienne place à Lalia","v22t",1,"2026-11-04T23:18:55+01:00",106,1],
  ["nat4","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",90,1],
  ["nat5","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",108,1],
  ["nat6","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",110,1],
- ["lal3","maison","L","réserve","v22o","pause","2026-11-03T15:08:00+01:00",96,1],
- ["lal4","maison","L","réserve","v22o","pause","2026-11-03T15:08:00+01:00",98,1]
+ ["lal3","maison","L","veille relais : reprend les places proposées par Nathalie","v22t",1,"2026-11-04T23:20:37+01:00",96,1],
+ ["lal4","maison","L","rattr. samedi · sommeil pendant les ouvertures","v22t",1,"2026-11-04T23:22:31+01:00",98,1]
 ];
 const PLACES0 = { // places au moment du contrôle
  "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]}
