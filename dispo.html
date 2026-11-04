@@ -136,8 +136,10 @@ function render(){ renderIdle();
       else c=v==="absent"?`<span class="cnt c-full">complet</span>`:v==="bientôt"?`<span class="cnt c-soon">pas encore ouvert</span>`:v==="fermé"?`<span class="cnt c-wait">fermé</span>`:`<span class="cnt c-err">?</span>`;
       const free=Array.isArray(v)?v:[]; const ov=pv[z.d]?pv[z.d][t]:undefined; const old=Array.isArray(ov)?ov:(ov==="absent"?[]:null);
       const sn=seenOf(z,t); const nowv=window.__vt||Date.now();   /* v22m.4 : suivi des numéros déjà sortis */
-      if(sn&&!sn.length&&!free.length&&!me.length) c=`<span class="cnt c-soon">pas encore sorti</span>`;
-      const closed=sn&&((!free.length&&sn.length>0)||(z.f&&z.f[t]&&nowv-z.f[t]>900000));
+      const oh=(()=>{const [y,mo,da]=z.d.split("-").map(Number),[hh,mm]=(z.s||"14:00").split(":").map(Number); return new Date(y,mo-1,da-7,hh,mm).getTime();})();
+      const past=!free.length&&(v==="absent"||Array.isArray(v))&&nowv>oh+900000;   /* horaire complet, ouverture passée depuis 15 min : terminé même si l'observateur ne l'a pas vu sortir */
+      if(sn&&!sn.length&&!free.length&&!me.length&&!past) c=`<span class="cnt c-soon">pas encore sorti</span>`;
+      const closed=sn&&((!free.length&&sn.length>0)||(z.f&&z.f[t]&&nowv-z.f[t]>900000)||past);
       const nums=Array.from({length:12},(_,i)=>i+1).map(n=>{ const nev=sn&&!free.includes(n)&&!sn.includes(n)&&!(me.includes(n)&&t===z.s);
         if(nev) return closed?`<div class="n x" title="pris sans avoir été vu">${pad(n)}</div>`:`<div class="n u" title="pas encore sorti">–</div>`;
         return `<div class="n${me.includes(n)&&!free.includes(n)&&t===z.s?" me":free.includes(n)?(old&&!old.includes(n)?" new":" f"):(old&&old.includes(n)?" gone":"")}">${pad(n)}</div>`; }).join("");
