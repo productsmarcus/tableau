@@ -95,7 +95,7 @@ const SNAP = { at: "2026-11-03T23:56:00+01:00", label: "état relevé par Claude
 const P = [
  // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
  ["obs1","maison","N","observateur (relevé des créneaux) · profil nat1","v22m.7",0,"2026-11-03T23:50:38+01:00",140,1],
- ["nat7","bureau","N","mode 1 : 02 · mode 2 : 01 · receveur du relais","v22p","pause","2026-11-03T23:55:00+01:00",112,1],
+ ["nat7","bureau","N","échange du 4/11 (rôle natc) : a pris le 04, n'annule rien","v22q-natc","pause","2026-11-04T09:57:48+01:00",112,1],
  ["nat8","bureau","N","mode 1 : 02 · mode 2 : 02","v22p","pause","2026-11-03T23:55:00+01:00",114,1],
  ["nat9","bureau","N","mode 1 : 02 · mode 2 : 03","v22p","pause","2026-11-03T23:55:00+01:00",116,1],
  ["nat10","bureau","N","mode 1 : 02 · mode 2 : 04","v22p","pause","2026-11-03T23:55:00+01:00",118,1],
@@ -125,7 +125,7 @@ const P = [
  ["lal2","maison","L","renfort ouverture · mode 1 : 08 · mode 2 : 06","v22p","pause","2026-11-03T23:55:38+01:00",94,1],
  ["gnat1","maison","N","rattr. samedi · sommeil pendant les ouvertures","v22p",1,"2026-11-03T23:26:36+01:00",100,1],
  ["gnat2","maison","N","rattr. mardi · sommeil pendant les ouvertures","v22p",1,"2026-11-03T23:27:14+01:00",102,1],
- ["gnat3","maison","N","rattr. mercredi · sommeil pendant les ouvertures","v22p",1,"2026-11-03T23:40:25+01:00",104,1],
+ ["gnat3","maison","N","rattr. mercredi · en pause pendant l'échange du 4/11 (protège le 05)","v22p","pause","2026-11-04T09:53:44+01:00",104,1],
  ["gnat4","maison","N","rattr. jeudi · sommeil pendant les ouvertures","v22p",1,"2026-11-03T23:40:25+01:00",106,1],
  ["nat4","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",90,1],
  ["nat5","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",108,1],
@@ -134,7 +134,7 @@ const P = [
  ["lal4","maison","L","réserve","v22o","pause","2026-11-03T15:08:00+01:00",98,1]
 ];
 const PLACES0 = { // places au moment du contrôle
- "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[5],L:[4]}, "2026-11-05":{N:[5],L:[4]}, "2026-11-07":{N:[10],L:[8]}, "2026-11-10":{N:[7],L:[2]}
+ "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4,5],L:[]}, "2026-11-05":{N:[5],L:[4]}, "2026-11-07":{N:[10],L:[8]}, "2026-11-10":{N:[7],L:[2]}
 };
 const OPEN = {2:"14:00",3:"14:00",4:"14:00",6:"10:00"}; // jours de séance (mar, mer, jeu, sam)
 
