@@ -91,7 +91,7 @@ tr.absent td{color:var(--mute);opacity:.6}
 <script>
 "use strict";
 /* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
-const SNAP = { at: "2026-11-06T22:18:00+01:00", label: "état relevé par Claude le ven. 06/11 à 22:18 (Lalia a annulé à la main son 07 du sam. 7/11)" };
+const SNAP = { at: "2026-11-07T10:11:00+01:00", label: "état relevé par Claude le sam. 07/11 à 10:11 (ouverture du 14/11 : Lalia 02, 03, 04, 05, 06 ; 05 et 06 annulés automatiquement vers 10:44)" };
 const P = [
  // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
  ["obs1","maison","N","observateur (relevé des créneaux) · profil nat1","v22m.7",0,"2026-11-03T23:50:38+01:00",140,1],
@@ -136,7 +136,7 @@ const P = [
  ["lal4","maison","L","rattr. samedi · sommeil pendant les ouvertures","v22u",1,"2026-11-05T11:15:47+01:00",98,1]
 ];
 const PLACES0 = { // places au moment du contrôle
- "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[9]}
+ "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[9]},"2026-11-14":{N:[],L:[2,3,4,5,6]}
 };
 const OPEN = {2:"14:00",3:"14:00",4:"14:00",6:"10:00"}; // jours de séance (mar, mer, jeu, sam)
 
