@@ -137,7 +137,7 @@ function render(){ renderIdle();
       const free=Array.isArray(v)?v:[]; const ov=pv[z.d]?pv[z.d][t]:undefined; const old=Array.isArray(ov)?ov:(ov==="absent"?[]:null);
       const sn=seenOf(z,t); const nowv=window.__vt||Date.now();   /* v22m.4 : suivi des numéros déjà sortis */
       const oh=(()=>{const [y,mo,da]=z.d.split("-").map(Number),[hh,mm]=(z.s||"14:00").split(":").map(Number); return new Date(y,mo-1,da-7,hh,mm).getTime();})();
-      const past=!free.length&&(v==="absent"||Array.isArray(v))&&nowv>oh+900000;   /* horaire complet, ouverture passée depuis 15 min : terminé même si l'observateur ne l'a pas vu sortir */
+      const past=!free.length&&(v==="absent"||(Array.isArray(v)&&!(sn&&!sn.length)))&&nowv>oh+900000;   /* horaire disparu (ou déjà sorti), ouverture passée depuis 15 min : terminé ; horaire affiché sans aucun numéro jamais vu = pas encore sorti, même en retard */
       if(sn&&!sn.length&&!free.length&&!me.length&&!past) c=`<span class="cnt c-soon">pas encore sorti</span>`;
       const closed=sn&&((!free.length&&sn.length>0)||(z.f&&z.f[t]&&nowv-z.f[t]>900000)||past);
       const nums=Array.from({length:12},(_,i)=>i+1).map(n=>{ const nev=sn&&!free.includes(n)&&!sn.includes(n)&&!(me.includes(n)&&t===z.s);
