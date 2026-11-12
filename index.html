@@ -91,7 +91,7 @@ tr.absent td{color:var(--mute);opacity:.6}
 <script>
 "use strict";
 /* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
-const SNAP = { at: "2026-11-11T17:47:00+01:00", label: "état relevé par Claude le mer. 11/11 à 17:47 (17/11 : Nathalie 03, Lalia 07)" };
+const SNAP = { at: "2026-11-12T09:06:00+01:00", label: "état relevé par Claude le jeu. 12/11 à 09:06 (12/11 : Nathalie 04, Lalia 06)" };
 const P = [
  // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
  ["obs1","maison","N","observateur (relevé des créneaux) · profil nat1","v22m.7",0,"2026-11-03T23:50:38+01:00",140,1],
@@ -133,10 +133,10 @@ const P = [
  ["nat5","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",108,1],
  ["nat6","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",110,1],
  ["lal3","maison","L","rattr. mercredi (Lalia) · sommeil pendant les ouvertures","v22u4",1,"2026-11-11T09:15:45+01:00",96,1],
- ["lal4","maison","L","rattr. jeudi (Lalia) · sommeil pendant les ouvertures","v22u2",1,"2026-11-12T09:02:42+01:00",98,1]
+ ["lal4","maison","L","rattr. mardi (Lalia) · sommeil pendant les ouvertures","v22u3",1,"2026-11-12T09:05:21+01:00",98,1]
 ];
 const PLACES0 = { // places au moment du contrôle
- "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[9]},"2026-11-14":{N:[3],L:[2]},"2026-11-17":{N:[3],L:[7]}
+ "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[6]},"2026-11-14":{N:[3],L:[2]},"2026-11-17":{N:[3],L:[7]}
 };
 const OPEN = {2:"14:00",3:"14:00",4:"14:00",6:"10:00"}; // jours de séance (mar, mer, jeu, sam)
 
