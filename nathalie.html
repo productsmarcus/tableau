@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La Gerbe · Tableau Nathalie</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f5ef;color:#17332b;font:15px system-ui,sans-serif}header{padding:20px;text-align:center;background:linear-gradient(120deg,#102633,#174736);color:white;border-bottom:4px solid #e5ab44}h1{margin:0 0 8px}main{max-width:1550px;margin:auto;padding:14px}form{display:flex;flex-wrap:wrap;align-items:end;gap:8px;justify-content:center}label{display:grid;text-align:left;gap:3px}input,button{font:inherit;padding:7px;border:1px solid #a6baad;border-radius:6px}#grid{display:grid;grid-template-columns:repeat(4,minmax(215px,1fr));overflow:auto;gap:10px;margin:14px 0}article,section{background:white;border:1px solid #d4ddd6;border-radius:10px;overflow:hidden}h2{margin:0;padding:8px;background:#194435;color:white;font-size:16px}.row,.stamp{padding:7px 8px;border-bottom:1px solid #e2e8e2}.slots{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:5px}.slots span,.legend span{padding:3px 0;text-align:center;border-radius:4px;font-size:11px;font-weight:700}.legend span{display:inline-block;padding:4px 8px;margin:0 4px 4px 0}.free{background:#26774c;color:white}.taken{background:#e5ebe6;color:#41584b}.unknown{background:#efe7da}.mine{background:#1b49c8;color:white}.closed{background:#eaf0ff;color:#25488c}.stamp{font-size:12px;background:#f6efdd}li{margin:6px 0}ol{max-height:45vh;overflow:auto}
+</style>
+<header><h1>Créneaux disponibles</h1><p id="status" role="status">Configure le flux privé pour afficher le tableau.</p>
+<form id="settings"><label>Topic ntfy<input id="topic" required pattern="[A-Za-z0-9_-]{1,64}" autocapitalize="off"></label><label>Jeton de lecture<input id="token" required type="password"></label><label>Clé de partage<input id="key" required type="password"></label><button>Connecter</button></form></header>
+<main><div class="legend"><span class="free">Libre</span><span class="taken">Pris</span><span class="mine">Nathalie</span><span class="closed">Pas encore ouvert</span><span class="unknown">État inconnu</span></div>
+<div id="grid" tabindex="0" aria-label="Quatre séances, défilement horizontal"></div>
+<section><h2>Derniers mouvements</h2><ol id="moves"></ol></section></main>
+<script>
+const $=id=>document.getElementById(id);
+const time=new Intl.DateTimeFormat('fr-FR',{timeZone:'Europe/Paris',dateStyle:'short',timeStyle:'medium'});
+const decode=value=>Uint8Array.from(atob(value),character=>character.charCodeAt(0));
+let current, report, pending=false;
+const node=(tag,value,cls)=>{const el=document.createElement(tag);el.textContent=value;if(cls)el.className=cls;return el};
+function render(data){
+ $('grid').replaceChildren(...data.days.slice(0,4).map(day=>{
+  const card=node('article','');card.append(node('h2',day.label),node('p',day.stamp?'Relevé du '+time.format(day.stamp)+(day.error?' · lecture en erreur':''):'Aucun relevé valide','stamp'));
+  for(const row of day.rows){
+   const line=node('div','','row'), slots=node('div','','slots');
+   line.append(node('strong',row.time));
+   row.slots.slice(0,12).forEach((state,i)=>slots.append(node('span',String(i+1).padStart(2,'0'),state)));
+   line.append(slots);card.append(line);
+  }
+  return card;
+ }));
+ $('moves').replaceChildren(...(data.movements.length?data.movements.slice(0,100).map(item=>node('li',time.format(item.at)+' · '+item.label+' '+item.time+' · n° '+item.num+' · '+item.movement)):[node('li','Aucun mouvement transmis')]));
+}
+async function refresh(){
+ if(!current||pending)return;
+ pending=true;const config=current;
+ try{
+  const endpoint='https://ntfy.sh/'+config.topic+'/json?poll=1&since=latest';
+  const result=await fetch(endpoint,{headers:{Authorization:'Bearer '+config.token},cache:'no-store',signal:AbortSignal.timeout(12000)});
+  if(!result.ok)throw Error('ntfy HTTP '+result.status);
+  for(const line of (await result.text()).trim().split('\n').reverse()){
+   if(!line)continue;
+   try{
+    const message=JSON.parse(line);if(message.event!=='message')continue;
+    const box=JSON.parse(message.message);if(box.v!==1)continue;
+    const bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(box.iv)},config.key,decode(box.data));
+    const snapshot=JSON.parse(new TextDecoder().decode(bytes));
+    if(snapshot.type!=='gerbe-nathalie-v1'||!Number.isFinite(snapshot.at)||!Array.isArray(snapshot.days)||!Array.isArray(snapshot.movements))continue;
+    if(current!==config)return;
+    if(!report||snapshot.at>report.at){render(snapshot);report=snapshot}
+    break;
+   }catch{}
+  }
+  $('status').textContent=report?'Dernière publication · '+time.format(report.at)+(Date.now()-report.at>180000?' · relevé ancien':''):'En attente du premier relevé compatible. Vérifie aussi la clé de partage.';
+ }catch(error){$('status').textContent=error.message+(report?' · dernier tableau conservé':'')}
+ finally{pending=false}
+}
+$('settings').onsubmit=async event=>{
+ event.preventDefault();
+ try{
+  const raw=decode($('key').value.trim());if(raw.length!==32)throw Error('La clé doit correspondre à la clé de partage du PC.');
+  const key=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']);
+  current={topic:$('topic').value.trim(),token:$('token').value.trim(),key};
+  report=null;$('grid').replaceChildren();$('moves').replaceChildren();
+  $('status').textContent='Connexion…';refresh();
+ }catch(error){$('status').textContent=error.message}
+};
+setInterval(refresh,30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+</script>
+</html>
