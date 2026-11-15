@@ -8,12 +8,41 @@
 .account-actions{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px;margin-top:12px}.account-actions a{padding:7px 10px;border:1px solid #a6baad;border-radius:6px;background:white;color:#17332b;text-decoration:none}form[hidden],button[hidden]{display:none}#edit-settings{background:transparent;color:white;cursor:pointer}
 </style>
 <header><h1>Créneaux disponibles</h1><p id="status" role="status">Configure le flux privé pour afficher le tableau.</p>
-<form id="settings"><label>Topic ntfy<input id="topic" required pattern="[A-Za-z0-9_-]{1,64}" autocapitalize="off"></label><label>Jeton de lecture<input id="token" required type="password"></label><label>Clé de partage<input id="key" required type="password"></label><button>Connecter</button></form><div class="account-actions"><a id="bookings" href="https://www.lagerbe.org/booking-calendar/r%C3%A9servation-de-cr%C3%A9neau-ressourcerie" target="_blank" rel="noopener noreferrer">Ouvrir Mes réservations</a><button id="edit-settings" type="button" hidden>Modifier la connexion</button></div></header>
+<form id="settings"><label>Topic ntfy<input id="topic" required pattern="[A-Za-z0-9_-]{1,64}" autocapitalize="off"></label><label>Jeton de lecture<input id="token" required type="password"></label><label>Clé de partage<input id="key" required type="password"></label><button>Connecter</button></form><div class="account-actions"><a id="bookings" href="https://www.lagerbe.org/" target="_blank" rel="noopener noreferrer">Ouvrir Mes réservations</a><button id="edit-settings" type="button" hidden>Modifier la connexion</button></div></header>
 <main><div class="legend"><span class="free">Libre</span><span class="taken">Pris</span><span class="mine">Nathalie</span><span class="closed">Pas encore ouvert</span><span class="unknown">État inconnu</span></div>
 <div id="grid" tabindex="0" aria-label="Quatre séances, défilement horizontal"></div>
 <section><h2>Derniers mouvements</h2><ol id="moves"></ol></section></main>
 <script>
 const $=id=>document.getElementById(id);
+const bookingStorage='gerbe-nathalie-bookings';
+function readBookingAddress(value){
+ try{
+  const url=new URL(value);
+  return url.origin==='https://www.lagerbe.org'&&!url.username&&!url.password&&/^\/members-area\/[a-zA-Z0-9_-]+\/my-bookings\/?$/.test(url.pathname)?url.origin+url.pathname:null;
+ }catch{return null}
+}
+let bookingAddress=null;
+try{
+ const supplied=new URLSearchParams(location.hash.slice(1)).get('reservations');
+ bookingAddress=readBookingAddress(supplied)||readBookingAddress(localStorage.getItem(bookingStorage));
+ if(supplied&&bookingAddress)localStorage.setItem(bookingStorage,bookingAddress);
+ if(supplied)history.replaceState(null,'',location.pathname+location.search);
+}catch{}
+if(bookingAddress)$('bookings').href=bookingAddress;
+$('bookings').onclick=event=>{
+ if(bookingAddress)return;
+ const value=prompt('Pour le premier accès, colle l’adresse de la page Mes réservations de Nathalie.');
+ const address=readBookingAddress(value);
+ if(!address){
+  event.preventDefault();
+  if(value)alert('Utilise l’adresse de Mes réservations sur www.lagerbe.org.');
+  return;
+ }
+ bookingAddress=address;
+ try{localStorage.setItem(bookingStorage,address)}catch{}
+ $('bookings').href=address;
+};
+
 const time=new Intl.DateTimeFormat('fr-FR',{timeZone:'Europe/Paris',dateStyle:'short',timeStyle:'medium'});
 const decode=value=>Uint8Array.from(atob(value),character=>character.charCodeAt(0));
 let current, report, pending=false, collapseOnSuccess=false;
