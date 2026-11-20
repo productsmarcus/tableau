@@ -91,7 +91,7 @@ tr.absent td{color:var(--mute);opacity:.6}
 <script>
 "use strict";
 /* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
-const SNAP = { at: "2026-11-19T12:39:00+01:00", label: "état relevé par Claude le jeu. 19/11 à 12:39 (bureau : un profil par numéro 01 à 06 sur le 26/11 ; maison : 05 à 08 sur le 26/11, 01 à 03 du 24/11)" };
+const SNAP = { at: "2026-11-20T01:29:00+01:00", label: "état relevé par Claude le ven. 20/11 à 01:29 (gnat4 sur le 01 du 21/11 pour Nathalie ; 26/11 pas encore sorti ; 01–03 du 24/11 toujours pas sortis)" };
 const P = [
  // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
  ["obs1","maison","N","observateur (relevé des créneaux) · profil nat1","v22m.9",1,"2026-11-15T10:17:10+01:00",140,1],
@@ -128,7 +128,7 @@ const P = [
  ["gnat1","maison","N","24/11 : ne vise que le 01 (Nathalie) · ne dort jamais","v22y2",1,"2026-11-18T09:06:00+01:00",100,1],
  ["gnat2","maison","N","26/11 : ne vise que le 08 (Nathalie) · dès la sortie","v22y5",1,"2026-11-19T10:23:00+01:00",102,1],
  ["gnat3","maison","N","rattr. mercredi · propose l'ancienne place à Lalia","v22u",1,"2026-11-05T11:15:45+01:00",104,1],
- ["gnat4","maison","N","24/11 : ne vise que le 02 (Nathalie) · ne dort jamais","v22y2",1,"2026-11-18T09:06:00+01:00",106,1],
+ ["gnat4","maison","N","sam. 21/11 10:00 : ne vise que le 01 (Nathalie, libéré par Anthony) · ne dort jamais","v22y2",1,"2026-11-20T01:23:30+01:00",106,1],
  ["nat4","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",90,1],
  ["nat5","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",108,1],
  ["nat6","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",110,1],
