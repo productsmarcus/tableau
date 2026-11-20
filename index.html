@@ -91,7 +91,7 @@ tr.absent td{color:var(--mute);opacity:.6}
 <script>
 "use strict";
 /* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
-const SNAP = { at: "2026-11-20T01:29:00+01:00", label: "état relevé par Claude le ven. 20/11 à 01:29 (gnat4 sur le 01 du 21/11 pour Nathalie ; 26/11 pas encore sorti ; 01–03 du 24/11 toujours pas sortis)" };
+const SNAP = { at: "2026-11-20T08:27:00+01:00", label: "état relevé par Claude le ven. 20/11 à 08:27 (maison en v22z : répartition 3 min après la sortie ; gnat2 et gnat3 guetteurs du jeudi 26/11)" };
 const P = [
  // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
  ["obs1","maison","N","observateur (relevé des créneaux) · profil nat1","v22m.9",1,"2026-11-15T10:17:10+01:00",140,1],
@@ -121,19 +121,19 @@ const P = [
  ["lal12","bureau","L","mode 1 : 04 · mode 2 : répartition sur les libres","v22v",1,"2026-11-05T20:44:00+01:00",160,1],
  ["ant1","bureau","A","Anthony (son compte) · 01 seulement, garde sa place","v22v","arrete","2026-11-15T18:21:00+01:00",162,1],
  ["marc1","bureau","M","Marc (son compte) · 01 seulement, garde sa place","v22v","arrete","2026-11-15T18:21:00+01:00",164,1],
- ["nat2","maison","N","ménage immédiat Nathalie (05+ rendus si 01–04) · relais coupé · maison","v22y4",1,"2026-11-18T09:21:00+01:00",86,1],
- ["gnat3","maison","N","26/11 : ne vise que le 06 (Nathalie) · dès la sortie","v22y5",1,"2026-11-19T10:23:00+01:00",88,1],
- ["lal1","maison","L","binôme 05 · ménage immédiat Lalia (05+ rendus si 01–04) · relais coupé · maison","v22y4",1,"2026-11-18T09:21:00+01:00",92,1],
- ["lal2","maison","L","26/11 : ne vise que le 07 (Lalia) · dès la sortie","v22y5",1,"2026-11-19T10:23:00+01:00",94,1],
- ["gnat1","maison","N","24/11 : ne vise que le 01 (Nathalie) · ne dort jamais","v22y2",1,"2026-11-18T09:06:00+01:00",100,1],
- ["gnat2","maison","N","26/11 : ne vise que le 08 (Nathalie) · dès la sortie","v22y5",1,"2026-11-19T10:23:00+01:00",102,1],
+ ["nat2","maison","N","ménage Nathalie + répartition 3 min après la sortie (v22z)","v22z",1,"2026-11-20T08:27:00+01:00",86,1],
+ ["gnat3","maison","N","jeudi (26/11) : tout numéro meilleur que la place de Nathalie · transferts v22z","v22z",1,"2026-11-20T08:27:00+01:00",88,1],
+ ["lal1","maison","L","05 à la sortie · ménage Lalia + répartition 3 min après la sortie (v22z)","v22z",1,"2026-11-20T08:27:00+01:00",92,1],
+ ["lal2","maison","L","26/11 : ne vise que le 07 (Lalia) · dès la sortie","v22z",1,"2026-11-20T08:27:00+01:00",94,1],
+ ["gnat1","maison","N","24/11 : ne vise que le 01 (Nathalie) · ne dort jamais","v22z",1,"2026-11-20T08:27:00+01:00",100,1],
+ ["gnat2","maison","N","jeudi (26/11) : tout numéro meilleur que la place de Nathalie · transferts v22z","v22z",1,"2026-11-20T08:27:00+01:00",102,1],
  ["gnat3","maison","N","rattr. mercredi · propose l'ancienne place à Lalia","v22u",1,"2026-11-05T11:15:45+01:00",104,1],
- ["gnat4","maison","N","24/11 : ne vise que le 02 (Nathalie) · ne dort jamais","v22y2",1,"2026-11-20T01:32:30+01:00",106,1],
+ ["gnat4","maison","N","24/11 : ne vise que le 02 (Nathalie) · ne dort jamais","v22z",1,"2026-11-20T08:27:00+01:00",106,1],
  ["nat4","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",90,1],
  ["nat5","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",108,1],
  ["nat6","maison","N","réserve","v22o","pause","2026-11-03T15:08:00+01:00",110,1],
  ["lal3","maison","L","rattr. jeudi (Lalia) · en pause","v22wu","pause","2026-11-15T18:30:30+01:00",96,1],
- ["lal4","maison","L","24/11 : ne vise que le 03 (Lalia) · ne dort jamais","v22y2",1,"2026-11-18T09:06:00+01:00",98,1]
+ ["lal4","maison","L","24/11 : ne vise que le 03 (Lalia) · ne dort jamais","v22z",1,"2026-11-20T08:27:00+01:00",98,1]
 ];
 const PLACES0 = { // places au moment du contrôle
  "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[6]},"2026-11-14":{N:[2],L:[]},"2026-11-17":{N:[3],L:[5]},"2026-11-18":{N:[2],L:[4]},"2026-11-19":{N:[2],L:[1]},"2026-11-21":{N:[1],L:[2]}, "2026-11-24":{N:[6],L:[4]}, "2026-11-25":{N:[1],L:[3]}, "2026-11-26":{N:[6],L:[1]}
