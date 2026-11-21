@@ -91,7 +91,7 @@ tr.absent td{color:var(--mute);opacity:.6}
 <script>
 "use strict";
 /* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
-const SNAP = { at: "2026-11-20T08:27:00+01:00", label: "état relevé par Claude le ven. 20/11 à 08:27 (maison en v22z : répartition 3 min après la sortie ; gnat2 et gnat3 guetteurs du jeudi 26/11)" };
+const SNAP = { at: "2026-11-21T10:08:00+01:00", label: "état relevé par Claude le sam. 21/11 à 10:08 (sortie du 28/11 à 09:59:01 : Nathalie 01, Lalia 02 transféré par la répartition v22z2, 04 de Lalia à rendre vers 10:14)" };
 const P = [
  // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
  ["obs1","maison","N","observateur (relevé des créneaux) · profil nat1","v22m.9",1,"2026-11-15T10:17:10+01:00",140,1],
@@ -136,7 +136,7 @@ const P = [
  ["lal4","maison","L","24/11 : ne vise que le 03 (Lalia) · ne dort jamais","v22z2",1,"2026-11-20T22:56:00+01:00",98,1]
 ];
 const PLACES0 = { // places au moment du contrôle
- "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[6]},"2026-11-14":{N:[2],L:[]},"2026-11-17":{N:[3],L:[5]},"2026-11-18":{N:[2],L:[4]},"2026-11-19":{N:[2],L:[1]},"2026-11-21":{N:[1],L:[]}, "2026-11-24":{N:[6],L:[4]}, "2026-11-25":{N:[1],L:[3]}, "2026-11-26":{N:[6],L:[1]}
+ "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[6]},"2026-11-14":{N:[2],L:[]},"2026-11-17":{N:[3],L:[5]},"2026-11-18":{N:[2],L:[4]},"2026-11-19":{N:[2],L:[1]},"2026-11-21":{N:[1],L:[]}, "2026-11-24":{N:[6],L:[4]}, "2026-11-25":{N:[1],L:[3]}, "2026-11-26":{N:[6],L:[1]}, "2026-11-28":{N:[1],L:[2,4]}
 };
 const OPEN = {2:"14:00",3:"14:00",4:"14:00",6:"10:00"}; // jours de séance (mar, mer, jeu, sam)
 
