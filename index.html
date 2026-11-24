@@ -54,6 +54,11 @@ tr.absent td{color:var(--mute);opacity:.6}
 #feed{max-height:420px;overflow:auto}
 #feedf{font-size:12px;color:var(--mute,#6b7a70);margin:-4px 0 6px}#feedf a{margin-right:6px;padding:1px 6px;border-radius:4px;background:var(--line);color:inherit;text-decoration:none;cursor:pointer}#feedf a.on{background:var(--green);color:var(--card)}
 .note{font-size:12px;color:var(--mute);margin-top:6px}
+.who{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
+.w-N{background:#c0266d}.w-L{background:#0f8a7e}.w-A{background:#d9730d}.w-M{background:#3b5bdb}
+#allbtn{background:var(--green);color:#fff;border:0;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:13px}#allbtn:disabled{opacity:.6;cursor:default}
+.allhead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px}
+tr.r14 td{font-weight:700}
 </style>
 </head>
 <body>
@@ -77,6 +82,12 @@ tr.absent td{color:var(--mute);opacity:.6}
   <section class="span4"><h2>Places N et L</h2>
     <div class="scroll"><table class="places"><thead><tr><th>Séance</th><th>N</th><th>L</th></tr></thead><tbody id="places"></tbody></table></div>
     <div class="note" id="placesnote"></div>
+  </section>
+  <section class="span12"><h2>Toutes les réservations (tous les horaires)</h2>
+    <div class="allhead"><button id="allbtn">🔄 Mettre à jour les réservations</button><span id="allstat" class="mute"></span></div>
+    <div id="allwho" class="allhead"></div>
+    <div class="scroll"><table><thead><tr><th>Séance</th><th>Heure</th><th>N°</th><th>Personne</th></tr></thead><tbody id="allres"><tr><td colspan="4" class="mute">Aucun relevé reçu dans les 12 dernières heures : appuie sur le bouton.</td></tr></tbody></table></div>
+    <div class="note">Le bouton demande à nat2 (Nathalie), lal1 (Lalia), ant1 (Anthony) et marc1 (Marc) de relire « Mes réservations » (environ 30 s ; un relevé toutes les 2 min au plus). En gras : l'horaire principal de la séance (14:00, ou 10:00 le samedi).</div>
   </section>
   <section class="span12"><h2>Profils (PC maison et PC bureau)</h2>
     <div class="scroll"><table><thead><tr><th>Profil</th><th>PC</th><th class="hm">Compte</th><th>Cible</th><th>Mode</th><th class="hm">Depuis</th><th>Relance estimée</th><th>Dernière action (ntfy)</th><th>Heure</th><th class="hm">Actions reçues</th></tr></thead><tbody id="profs"></tbody></table></div>
@@ -158,7 +169,7 @@ function parseTag(s){ const m = String(s||"").match(/#lg ([^\n]+)/); if(!m) retu
   if(o.n != null) o.n = +o.n; if(o.t) o.t = +o.t; return o; }
 
 const LABEL = {book:"réservé", cancel:"annulé", choice:"numéro choisi", form:"formulaire", free:"formulaire libéré",
-  relay:"demande de relais", relayround:"relais : tour suivant", relaydone:"relais terminé"};
+  relay:"demande de relais", allres:"toutes les réservations relues", scan:"relecture complète demandée", relayround:"relais : tour suivant", relaydone:"relais terminé"};
 
 function parisDay(t){ return new Date(t).toLocaleDateString("fr-CA",{timeZone:"Europe/Paris"}); }
 function feedItem(m){
@@ -166,7 +177,7 @@ function feedItem(m){
   const rm = title.match(/La Gerbe – ([a-z]+\d+)\s*:\s*(.*)$/); const role = (g && g.r) || (rm && rm[1]) || "?";
   const tt = (g && g.t) || t; let txt, cls = "";
   if(g && g.e){
-    txt = (LABEL[g.e]||g.e) + (g.n!=null ? " Créneau " + pad(g.n) : "") + (g.d ? " · " + dfr(g.d) : "") + (g.o ? " · n° " + g.o : "") + (g.dry ? " (blanc)" : "");
+    txt = (LABEL[g.e]||g.e) + (g.n!=null ? " Créneau " + pad(g.n) : "") + (g.d ? " · " + dfr(g.d) : "") + (g.o && g.e!=="allres" ? " · n° " + g.o : "") + (g.dry ? " (blanc)" : "");
     cls = g.e==="book" ? "ev-book" : g.e==="cancel" ? "ev-cancel" : g.e==="form" ? "ev-form" : "ev-choice";
   } else { txt = rm ? rm[2] : (title || String(m.message||"").slice(0,80)); cls = "ev-alert"; }
   const d = (g && /^\d{4}-\d{2}-\d{2}$/.test(g.d||"")) ? g.d : parisDay(t);
@@ -183,11 +194,12 @@ function loadFeedFiles(){
 
 function handle(m){
   if(!m || m.event !== "message" || seen.has(m.id)) return; seen.add(m.id); lastId = m.id; nmsg++;
+  { const g0 = parseTag(m.message); if(g0 && g0.e==="allres") allresAdd(g0, (m.time||0)*1000); }
   const t = (m.time||0)*1000; const title = String(m.title||""); const g = parseTag(m.message);
   const rm = title.match(/La Gerbe – ([a-z]+\d+)\s*:\s*(.*)$/); const role = (g && g.r) || (rm && rm[1]) || "?";
   const tt = (g && g.t) || t; let txt, cls = "";
   if(g && g.e){
-    txt = (LABEL[g.e]||g.e) + (g.n!=null ? " Créneau " + pad(g.n) : "") + (g.d ? " · " + dfr(g.d) : "") + (g.o ? " · n° " + g.o : "") + (g.dry ? " (blanc)" : "");
+    txt = (LABEL[g.e]||g.e) + (g.n!=null ? " Créneau " + pad(g.n) : "") + (g.d ? " · " + dfr(g.d) : "") + (g.o && g.e!=="allres" ? " · n° " + g.o : "") + (g.dry ? " (blanc)" : "");
     cls = g.e==="book" ? "ev-book" : g.e==="cancel" ? "ev-cancel" : g.e==="form" ? "ev-form" : "ev-choice";
     if(g.d && g.n!=null && (g.e==="choice"||g.e==="form"||g.e==="book")){
       const R = races[g.d] || (races[g.d] = {}); const x = R[g.n] || (R[g.n] = {choice:new Set(), form:new Set(), won:null});
@@ -325,6 +337,27 @@ function replay(id){
 }
 /* bouton Démo retiré (la démo reste accessible par #demo) */
 render(); if(RPL) replay(RPL); else if(DEMO) demo(); else { loadFeedFiles(); connect(); }
+
+/* ===== Toutes les réservations (v23c) ===== */
+const WHO = {N:"Nathalie", L:"Lalia", A:"Anthony", M:"Marc"};
+const ALLR = {};
+function allresAdd(g, t){ const p = g.p; if(!WHO[p]) return; const tt = g.t || t; if(ALLR[p] && ALLR[p].t > tt) return;
+  const list = (g.o && g.o !== "0") ? String(g.o).split(".").map(x => ({d:x.slice(0,4)+"-"+x.slice(4,6)+"-"+x.slice(6,8), h:x.slice(8,10)+":"+x.slice(10,12), n:+x.slice(13)})) : [];
+  ALLR[p] = {t:tt, list, dry:!!g.dry, r:g.r}; allresRender(); }
+function allresRender(){
+  const today = new Date().toLocaleDateString("fr-CA",{timeZone:"Europe/Paris"}); const rows = [];
+  for(const p in ALLR) for(const x of ALLR[p].list) if(x.d >= today) rows.push(Object.assign({p}, x));
+  rows.sort((a,b) => (a.d+a.h+pad(a.n)).localeCompare(b.d+b.h+pad(b.n)) || a.p.localeCompare(b.p));
+  const main = d => { const wd = new Date(d+"T12:00:00").getDay(); return wd===6 ? "10:00" : "14:00"; };
+  $("allres").innerHTML = rows.length ? rows.map(r => '<tr class="'+(r.h===main(r.d)?"r14":"")+'"><td>'+dfr(r.d)+'</td><td>'+r.h+'</td><td>'+pad(r.n)+'</td><td><span class="who w-'+r.p+'">'+WHO[r.p]+'</span></td></tr>').join("") : '<tr><td colspan="4" class="mute">Aucune réservation à venir dans les relevés reçus.</td></tr>';
+  $("allwho").innerHTML = Object.keys(WHO).map(p => '<span><span class="who w-'+p+'">'+WHO[p]+'</span> '+(ALLR[p] ? '<span class="mute">relevé '+new Date(ALLR[p].t).toLocaleString("fr-FR",{weekday:"short",hour:"2-digit",minute:"2-digit"})+(ALLR[p].dry?" (test)":"")+' · '+ALLR[p].list.filter(x=>x.d>=today).length+' résa</span>' : '<span class="mute">pas de relevé</span>')+'</span>').join("");
+}
+$("allbtn").addEventListener("click", () => { const b = $("allbtn"); b.disabled = true; $("allstat").textContent = "demande envoyée…";
+  fetch("https://ntfy.sh/laressourcerie", {method:"POST", headers:{"Title":"La Gerbe - tableau : relecture complete demandee"}, body:"Relecture complète demandée depuis le tableau\n\n#lg e=scan p=- r=tableau t="+Date.now()})
+    .then(r => { $("allstat").textContent = r.ok ? "demande envoyée à "+new Date().toLocaleTimeString("fr-FR")+" : les relevés arrivent dans environ 30 s" : "envoi refusé par ntfy ("+r.status+")"; })
+    .catch(() => { $("allstat").textContent = "envoi impossible (réseau)"; })
+    .finally(() => setTimeout(() => { b.disabled = false; }, 30000)); });
+allresRender();
 </script>
 </body>
 </html>
