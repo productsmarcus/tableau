@@ -195,6 +195,7 @@ function loadFeedFiles(){
 function handle(m){
   if(!m || m.event !== "message" || seen.has(m.id)) return; seen.add(m.id); lastId = m.id; nmsg++;
   { const g0 = parseTag(m.message); if(g0 && g0.e==="allres") allresAdd(g0, (m.time||0)*1000); }
+  { const g0 = parseTag(m.message); if(g0 && g0.e==="mine" && g0.d && !g0.dry && (g0.p==="N"||g0.p==="L") && (g0.t||0) > snapT){ const pl = places[g0.d] || (places[g0.d] = {N:[],L:[]}); pl[g0.p] = (g0.o && g0.o!=="0") ? String(g0.o).split(".").map(Number) : []; } }   /* v23c : relecture du site = places réelles */
   const t = (m.time||0)*1000; const title = String(m.title||""); const g = parseTag(m.message);
   const rm = title.match(/La Gerbe – ([a-z]+\d+)\s*:\s*(.*)$/); const role = (g && g.r) || (rm && rm[1]) || "?";
   const tt = (g && g.t) || t; let txt, cls = "";
