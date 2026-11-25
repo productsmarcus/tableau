@@ -155,6 +155,12 @@ def _arr(v):
     return v if isinstance(v, list) else ([] if v == "absent" else None)
 
 
+def _glitch(z, oa):
+    """Tous les horaires lus « absent » d'un coup alors que le relevé de référence montrait des numéros libres : fausse lecture."""
+    x = z.get("x") or {}
+    return bool(x) and all(v == "absent" for v in x.values()) and any(isinstance(v, list) and v for v in (oa or {}).values())
+
+
 def archive_moves(msgs):
     os.makedirs(MOVES, exist_ok=True)
     lastp = os.path.join(MOVES, "_last.json")
@@ -184,6 +190,8 @@ def archive_moves(msgs):
                 oa = pa.get(z["d"])
                 if oa is None or not z.get("x"):
                     continue
+                if _glitch(z, oa):   # lecture « tout complet » d'obs1 : relevé ignoré pour cette séance
+                    continue
                 for h, nv in z["x"].items():
                     N, O = _arr(nv), _arr(oa.get(h))
                     if N is None or O is None:
@@ -199,6 +207,8 @@ def archive_moves(msgs):
         if prev:
             keep = {z["d"]: z for z in prev.get("days", [])}
             for z in x.get("days", []):
+                if _glitch(z, (keep.get(z["d"]) or {}).get("x") or {}):
+                    continue
                 keep[z["d"]] = z
             today = datetime.fromtimestamp(x["t"] / 1000, PARIS).strftime("%Y-%m-%d")
             prev = {"t": x["t"], "days": sorted((z for z in keep.values() if z["d"] >= today), key=lambda z: z["d"])}
