@@ -102,7 +102,7 @@ tr.r14 td{font-weight:700}
 <script>
 "use strict";
 /* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
-const SNAP = { at: "2026-11-25T21:01:00+01:00", label: "état relevé par Claude le mer. 25/11 à 21:01 (sortie du 02/12 à 20:53 : Nathalie 01, Lalia 02 après répartition automatique ; v23g)" };
+const SNAP = { at: "2026-11-27T21:58:00+01:00", label: "état relevé par Claude le ven. 27/11 à 21:58 (Thomas : 02/12 n°02 repris de Lalia, 03/12 n°03 repris de Marc)" };
 const P = [
  // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
  ["obs1","maison","N","observateur · lecture directe du site (~3 s), relevé toutes les ~1,5 s, alerte SORTIE dès qu'une séance s'ouvre · profil nat1","v22m.14",1,"2026-11-26T17:00:00+01:00",140,1],
@@ -148,7 +148,7 @@ const P = [
  ["lal4","maison","L","tireur 01–04 manquants à l'équipe (N, L, Thomas), tir 10 min (lecture continue, tir à la sortie)","tir3",1,"2026-11-27T20:43:00+01:00",98,1],
   ];
 const PLACES0 = { // places au moment du contrôle
- "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[6]},"2026-11-14":{N:[2],L:[]},"2026-11-17":{N:[3],L:[5]},"2026-11-18":{N:[2],L:[4]},"2026-11-19":{N:[2],L:[1]},"2026-11-21":{N:[1],L:[]}, "2026-11-24":{N:[1],L:[2]}, "2026-11-25":{N:[1],L:[]}, "2026-11-26":{N:[6],L:[1]}, "2026-11-28":{N:[1],L:[2]},"2026-12-01":{N:[3],L:[1]},"2026-12-02":{N:[1],L:[2]}
+ "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[6]},"2026-11-14":{N:[2],L:[]},"2026-11-17":{N:[3],L:[5]},"2026-11-18":{N:[2],L:[4]},"2026-11-19":{N:[2],L:[1]},"2026-11-21":{N:[1],L:[]}, "2026-11-24":{N:[1],L:[2]}, "2026-11-25":{N:[1],L:[]}, "2026-11-26":{N:[6],L:[1]}, "2026-11-28":{N:[1],L:[2]},"2026-12-01":{N:[3],L:[1]},"2026-12-02":{N:[1],L:[],M:[2]},"2026-12-03":{N:[],L:[],M:[3]}
 };
 const OPEN = {2:"14:00",3:"14:00",4:"14:00",6:"10:00"}; // jours de séance (mar, mer, jeu, sam)
 
@@ -212,8 +212,8 @@ function handle(m){
     if((g.e==="book"||g.e==="cancel") && g.d && g.n!=null){
       const kind = g.e==="cancel" ? "annulation" : /^gnat/.test(role) ? "rattrapage" : "réservation";
       hist.unshift({t:tt, role, d:g.d, n:g.n, kind, dry:!!g.dry});
-      if(!g.dry && tt > snapT && (g.p==="N"||g.p==="L")){
-        const pl = places[g.d] || (places[g.d] = {N:[],L:[]}); const a = pl[g.p];
+      if(!g.dry && tt > snapT && (g.p==="N"||g.p==="L"||g.p==="M")){
+        const pl = places[g.d] || (places[g.d] = {N:[],L:[]}); const a = pl[g.p] || (pl[g.p] = []);
         if(g.e==="book" && !a.includes(g.n)) a.push(g.n);
         if(g.e==="cancel"){ const i = a.indexOf(g.n); if(i>=0) a.splice(i,1); }
       }
@@ -246,7 +246,7 @@ function render(){
   const marcOf = k => mList.filter(x => x.d===k && x.h===mainH(k)).map(x => x.n);
   const today0 = new Date().toLocaleDateString("fr-CA",{timeZone:"Europe/Paris"});
   const keys = [...new Set(Object.keys(places).concat(mList.filter(x => x.h===mainH(x.d) && x.d>=today0).map(x => x.d)))].sort();
-  $("places").innerHTML = keys.map(k => { const x = places[k] || {N:[],L:[]}; const m = marcOf(k); const f = a => a.length ? a.slice().sort((a,b)=>a-b).map(pad).join(", ") : "–";
+  $("places").innerHTML = keys.map(k => { const x = places[k] || {N:[],L:[]}; let mOk=false; try{ mOk = !!(ALLR.M && ALLR.M.t > snapT); }catch(e){} const m = mOk ? marcOf(k) : (x.M||[]); const f = a => a.length ? a.slice().sort((a,b)=>a-b).map(pad).join(", ") : "–";
     return `<tr><td>${dfr(k)}</td><td class="${x.N.length?"ok":""}">${f(x.N)}</td><td class="${x.L.length?"ok":""}">${f(x.L)}</td><td class="${m.length?"ok":""}">${f(m)}</td></tr>`; }).join("");
   $("placesnote").textContent = (typeof RPL!=="undefined" && RPL) ? "En mode Rejouer, ce tableau montre l'état du dernier contrôle, pas celui de la séance rejouée." : "Point de départ : " + SNAP.label + ", puis mis à jour en direct (réservations et annulations réelles reçues sur ntfy).";
   // course
