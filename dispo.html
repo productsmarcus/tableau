@@ -81,8 +81,8 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
 <footer>Relevé en continu par un profil observateur (un tour toutes les 10 secondes environ, puis toutes les 1 à 2 secondes pendant 30 minutes dès que le créneau principal d’une nouvelle séance sort), publié seulement quand quelque chose change, et au moins toutes les 30 minutes. Places N et L : point de départ du dernier contrôle, puis réservations et annulations reçues en direct.</footer>
 <script>
 "use strict";
-const SNAP={at:"2026-11-25T21:01:00+01:00"};
-const PLACES0={"2026-11-03":{N:[1],L:[4]},"2026-11-04":{N:[4],L:[]},"2026-11-05":{N:[3],L:[4]},"2026-11-07":{N:[2],L:[]},"2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[6]},"2026-11-14":{N:[2],L:[]},"2026-11-17":{N:[3],L:[5]},"2026-11-18":{N:[2],L:[4]},"2026-11-19":{N:[2],L:[1]},"2026-11-21":{N:[1],L:[]},"2026-11-24":{N:[1],L:[2]},"2026-11-25":{N:[1],L:[]}, "2026-11-26":{N:[6],L:[1]}, "2026-11-28":{N:[1],L:[2]},"2026-12-01":{N:[3],L:[1]},"2026-12-02":{N:[1],L:[2]}};
+const SNAP={at:"2026-11-27T21:58:00+01:00"};
+const PLACES0={"2026-11-03":{N:[1],L:[4]},"2026-11-04":{N:[4],L:[]},"2026-11-05":{N:[3],L:[4]},"2026-11-07":{N:[2],L:[]},"2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[6]},"2026-11-14":{N:[2],L:[]},"2026-11-17":{N:[3],L:[5]},"2026-11-18":{N:[2],L:[4]},"2026-11-19":{N:[2],L:[1]},"2026-11-21":{N:[1],L:[]},"2026-11-24":{N:[1],L:[2]},"2026-11-25":{N:[1],L:[]}, "2026-11-26":{N:[6],L:[1]}, "2026-11-28":{N:[1],L:[2]},"2026-12-01":{N:[3],L:[1]},"2026-12-02":{N:[1],L:[],M:[2]},"2026-12-03":{N:[1],L:[2],M:[3]}};
 const OPEN={2:"14:00",3:"14:00",4:"14:00",6:"10:00"};
 const $=id=>document.getElementById(id); const pad=n=>String(n).padStart(2,"0");
 const places=JSON.parse(JSON.stringify(PLACES0)); const snapT=Date.parse(SNAP.at);
@@ -94,8 +94,8 @@ function handle(m){
   if(!m||m.event!=="message"||seen.has(m.id)) return; seen.add(m.id); lastId=m.id;
   if(m.topic==="laressourcerie-dispo"){ try{ const x=JSON.parse(m.message); if(x.t<MVFROM) return; if(!cur||x.t>=cur.t){ addMoves(cur,x); prev=cur; cur=x; } }catch(e){} }
   else { const g=parseTag(m.message); oursAdd(m.id,g); if(g&&g.e==="allres") allresAdd(g,(m.time||0)*1000);
-    if(g&&g.e==="mine"&&g.d&&!g.dry&&(g.p==="N"||g.p==="L")&&(g.t||0)>snapT){ const pl=places[g.d]||(places[g.d]={N:[],L:[]}); pl[g.p]=(g.o&&g.o!=="0")?String(g.o).split(".").map(Number):[]; }   /* v23c : relecture du site = places réelles */ if(g&&(g.e==="book"||g.e==="cancel")&&g.d&&g.n!=null&&!g.dry&&(g.p==="N"||g.p==="L")&&(g.t||0)>snapT){
-      const pl=places[g.d]||(places[g.d]={N:[],L:[]}); const a=pl[g.p];
+    if(g&&g.e==="mine"&&g.d&&!g.dry&&(g.p==="N"||g.p==="L")&&(g.t||0)>snapT){ const pl=places[g.d]||(places[g.d]={N:[],L:[]}); pl[g.p]=(g.o&&g.o!=="0")?String(g.o).split(".").map(Number):[]; }   /* v23c : relecture du site = places réelles */ if(g&&(g.e==="book"||g.e==="cancel")&&g.d&&g.n!=null&&!g.dry&&(g.p==="N"||g.p==="L"||g.p==="M")&&(g.t||0)>snapT){
+      const pl=places[g.d]||(places[g.d]={N:[],L:[]}); const a=pl[g.p]||(pl[g.p]=[]);
       if(g.e==="book"&&!a.includes(g.n)) a.push(g.n); if(g.e==="cancel"){ const i=a.indexOf(g.n); if(i>=0) a.splice(i,1);} } }
   render();
 }
@@ -149,7 +149,9 @@ function render(){ renderIdle();
   u.className="pill p-upd"+(age>2400?" p-old":"");
   const pv={}; if(prev) prev.days.forEach(z=>pv[z.d]=z.x||{});
   $("days").innerHTML=cur.days.map(z=>{const pl=places[z.d]||{N:[],L:[]}; const me=[...pl.N,...pl.L];
-    const held="N : "+(pl.N.length?pl.N.map(pad).join(", "):"–")+" · L : "+(pl.L.length?pl.L.map(pad).join(", "):"–");
+    let tl=pl.M||[]; try{ if(ALLR.M&&ALLR.M.t>snapT) tl=ALLR.M.list.filter(x=>x.d===z.d&&x.h===z.s).map(x=>x.n); }catch(e){}   /* Thomas : sa relecture si plus récente que l'état de départ */
+    tl=tl.slice().sort((a,b)=>a-b);
+    const held="N : "+(pl.N.length?pl.N.map(pad).join(", "):"–")+" · L : "+(pl.L.length?pl.L.map(pad).join(", "):"–")+" · T : "+(tl.length?tl.map(pad).join(", "):"–");
     const rows=!z.x?`<div class="slot"><span class="cnt c-err">lecture impossible à ce tour</span></div>`:Object.keys(z.x).map(t=>{const v=z.x[t];
       let c; if(Array.isArray(v)) c=v.length?`<span class="cnt c-ok">${v.length}/12 libres</span>`:`<span class="cnt c-full">complet</span>`;
       else c=v==="absent"?`<span class="cnt c-full">complet</span>`:v==="bientôt"?`<span class="cnt c-soon">pas encore ouvert</span>`:v==="fermé"?`<span class="cnt c-wait">fermé</span>`:`<span class="cnt c-err">?</span>`;
