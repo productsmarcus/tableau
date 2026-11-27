@@ -80,14 +80,14 @@ tr.r14 td{font-weight:700}
     <div class="note">Pour chaque numéro : profils qui l'ont choisi / arrivés au formulaire, puis le gagnant. Calculé sur les messages ntfy de la séance la plus récente.</div>
   </section>
   <section class="span4"><h2>Places N et L</h2>
-    <div class="scroll"><table class="places"><thead><tr><th>Séance</th><th>N</th><th>L</th><th>M</th></tr></thead><tbody id="places"></tbody></table></div>
+    <div class="scroll"><table class="places"><thead><tr><th>Séance</th><th>N</th><th>L</th><th>T</th></tr></thead><tbody id="places"></tbody></table></div>
     <div class="note" id="placesnote"></div>
   </section>
   <section class="span12"><h2>Toutes les réservations (tous les horaires)</h2>
     <div class="allhead"><button id="allbtn">🔄 Mettre à jour les réservations</button><span id="allstat" class="mute"></span></div>
     <div id="allwho" class="allhead"></div>
     <div class="scroll"><table><thead><tr><th>Séance</th><th>Heure</th><th>N°</th><th>Personne</th></tr></thead><tbody id="allres"><tr><td colspan="4" class="mute">Aucun relevé reçu dans les 12 dernières heures : appuie sur le bouton.</td></tr></tbody></table></div>
-    <div class="note">Le bouton demande à nat2 (Nathalie), lal1 (Lalia), ant1 (Anthony) et marc1 (Marc) de relire « Mes réservations » (environ 30 s ; un relevé toutes les 2 min au plus). En gras : l'horaire principal de la séance (14:00, ou 10:00 le samedi).</div>
+    <div class="note">Le bouton demande à nat2 (Nathalie), lal1 (Lalia), ant1 (Anthony) et thomas1 (Thomas) de relire « Mes réservations » (environ 30 s ; un relevé toutes les 2 min au plus). En gras : l'horaire principal de la séance (14:00, ou 10:00 le samedi).</div>
   </section>
   <section class="span12"><h2>Profils (PC maison et PC bureau)</h2>
     <div class="scroll"><table><thead><tr><th>Profil</th><th>PC</th><th class="hm">Compte</th><th>Cible</th><th>Mode</th><th class="hm">Depuis</th><th>Relance estimée</th><th>Dernière action (ntfy)</th><th>Heure</th><th class="hm">Actions reçues</th></tr></thead><tbody id="profs"></tbody></table></div>
@@ -132,10 +132,10 @@ const P = [
  ["lal11","bureau","L","26/11 : 04 seulement, sans repli","v22x2",1,"2026-11-19T12:39:00+01:00",138,1],
  ["lal12","bureau","L","mode 1 : 04 · mode 2 : répartition sur les libres","v22v",1,"2026-11-05T20:44:00+01:00",160,1],
  ["ant1","bureau","A","Anthony (son compte) · ancien noyau, non ouvert","v22v","arrete","2026-11-15T18:21:00+01:00",162,1],
- ["thomas1","bureau","M","Thomas (remplace Marc) · reprend par requête les 01–04 rendus par Nathalie ou Lalia (tir anticipé, ≈3 s)","thomas-r2",1,"2026-11-27T21:03:00+01:00",0,1],
- ["nat2","maison","N","relectures 5 s pendant une sortie, relais 3 min après la sortie, puis 01–04 en trop pour Marc (attend son résultat), reste annulé (Nathalie)","v23l2",1,"2026-11-27T19:48:00+01:00",86,1],
+ ["thomas1","bureau","M","Thomas · reprend par requête les 01–04 rendus par Nathalie ou Lalia (tir anticipé, ≈3 s)","thomas-r2",1,"2026-11-27T21:03:00+01:00",0,1],
+ ["nat2","maison","N","relectures 5 s pendant une sortie, relais 3 min après la sortie, puis 01–04 en trop pour Thomas (attend son résultat), reste annulé (Nathalie)","v23l2",1,"2026-11-27T19:48:00+01:00",86,1],
  ["gnat3","maison","N","devenu nat3 (tireur) le 27/11","v23k","arrete","2026-11-26T09:47:00+01:00",88,1],
- ["lal1","maison","L","relectures 5 s pendant une sortie, relais 3 min après la sortie, puis 01–04 en trop pour Marc (attend son résultat), reste annulé (Lalia)","v23l2",1,"2026-11-27T19:48:00+01:00",92,1],
+ ["lal1","maison","L","relectures 5 s pendant une sortie, relais 3 min après la sortie, puis 01–04 en trop pour Thomas (attend son résultat), reste annulé (Lalia)","v23l2",1,"2026-11-27T19:48:00+01:00",92,1],
  ["lal2","maison","L","pool Lalia · veille","v23k",1,"2026-11-26T09:47:00+01:00",94,1],
  ["gnat1","maison","N","pool Nathalie · guet direct 1×/s du 26/11 (mieux que 06)","v23k",1,"2026-11-26T09:47:00+01:00",100,1],
  ["gnat2","maison","N","pool Nathalie · veille","v23k",1,"2026-11-26T09:47:00+01:00",102,1],
@@ -241,7 +241,7 @@ function render(){
       `<td class="${s.cls||""}">${esc(s.last||"")}</td><td>${s.lastT ? hm(s.lastT) : ""}</td><td class="hm">${s.n||""}</td></tr>`; }).join("");
   $("snapnote").textContent = "Mode, démarrage et relance : " + SNAP.label + " (relance estimée d'après le cycle de chaque profil). Dernière action : en direct depuis ntfy (messages des 12 dernières heures).";
   // places
-  const mainH = d => new Date(d+"T12:00:00").getDay()===6 ? "10:00" : "14:00";   /* Marc : places de l'horaire principal, d'après ses relectures */
+  const mainH = d => new Date(d+"T12:00:00").getDay()===6 ? "10:00" : "14:00";   /* Thomas : places de l'horaire principal, d'après ses relectures */
   const mList = (() => { try { return (ALLR && ALLR.M) ? ALLR.M.list : []; } catch(e) { return []; } })();   /* ALLR peut ne pas exister encore au 1er affichage */
   const marcOf = k => mList.filter(x => x.d===k && x.h===mainH(k)).map(x => x.n);
   const today0 = new Date().toLocaleDateString("fr-CA",{timeZone:"Europe/Paris"});
@@ -345,7 +345,7 @@ function replay(id){
 render(); if(RPL) replay(RPL); else if(DEMO) demo(); else { loadFeedFiles(); connect(); }
 
 /* ===== Toutes les réservations (v23c) ===== */
-const WHO = {N:"Nathalie", L:"Lalia", A:"Anthony", M:"Marc"};
+const WHO = {N:"Nathalie", L:"Lalia", A:"Anthony", M:"Thomas"};
 const ALLR = {};
 function allresAdd(g, t){ const p = g.p; if(!WHO[p]) return; const tt = g.t || t; if(ALLR[p] && ALLR[p].t > tt) return;
   const list = (g.o && g.o !== "0") ? String(g.o).split(".").map(x => ({d:x.slice(0,4)+"-"+x.slice(4,6)+"-"+x.slice(6,8), h:x.slice(8,10)+":"+x.slice(10,12), n:+x.slice(13)})) : [];
