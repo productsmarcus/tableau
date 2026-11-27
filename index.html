@@ -240,9 +240,10 @@ function render(){
   $("snapnote").textContent = "Mode, démarrage et relance : " + SNAP.label + " (relance estimée d'après le cycle de chaque profil). Dernière action : en direct depuis ntfy (messages des 12 dernières heures).";
   // places
   const mainH = d => new Date(d+"T12:00:00").getDay()===6 ? "10:00" : "14:00";   /* Marc : places de l'horaire principal, d'après ses relectures */
-  const marcOf = k => ((typeof ALLR!=="undefined" && ALLR.M) ? ALLR.M.list : []).filter(x => x.d===k && x.h===mainH(k)).map(x => x.n);
+  const mList = (() => { try { return (ALLR && ALLR.M) ? ALLR.M.list : []; } catch(e) { return []; } })();   /* ALLR peut ne pas exister encore au 1er affichage */
+  const marcOf = k => mList.filter(x => x.d===k && x.h===mainH(k)).map(x => x.n);
   const today0 = new Date().toLocaleDateString("fr-CA",{timeZone:"Europe/Paris"});
-  const keys = [...new Set(Object.keys(places).concat(((typeof ALLR!=="undefined" && ALLR.M) ? ALLR.M.list : []).filter(x => x.h===mainH(x.d) && x.d>=today0).map(x => x.d)))].sort();
+  const keys = [...new Set(Object.keys(places).concat(mList.filter(x => x.h===mainH(x.d) && x.d>=today0).map(x => x.d)))].sort();
   $("places").innerHTML = keys.map(k => { const x = places[k] || {N:[],L:[]}; const m = marcOf(k); const f = a => a.length ? a.slice().sort((a,b)=>a-b).map(pad).join(", ") : "–";
     return `<tr><td>${dfr(k)}</td><td class="${x.N.length?"ok":""}">${f(x.N)}</td><td class="${x.L.length?"ok":""}">${f(x.L)}</td><td class="${m.length?"ok":""}">${f(m)}</td></tr>`; }).join("");
   $("placesnote").textContent = (typeof RPL!=="undefined" && RPL) ? "En mode Rejouer, ce tableau montre l'état du dernier contrôle, pas celui de la séance rejouée." : "Point de départ : " + SNAP.label + ", puis mis à jour en direct (réservations et annulations réelles reçues sur ntfy).";
@@ -346,7 +347,7 @@ const WHO = {N:"Nathalie", L:"Lalia", A:"Anthony", M:"Marc"};
 const ALLR = {};
 function allresAdd(g, t){ const p = g.p; if(!WHO[p]) return; const tt = g.t || t; if(ALLR[p] && ALLR[p].t > tt) return;
   const list = (g.o && g.o !== "0") ? String(g.o).split(".").map(x => ({d:x.slice(0,4)+"-"+x.slice(4,6)+"-"+x.slice(6,8), h:x.slice(8,10)+":"+x.slice(10,12), n:+x.slice(13)})) : [];
-  ALLR[p] = {t:tt, list, dry:!!g.dry, r:g.r}; allresRender(); try{ if(p==="M") render(); }catch(e){} }
+  ALLR[p] = {t:tt, list, dry:!!g.dry, r:g.r}; allresRender(); if(p==="M") schedule(); }
 function allresRender(){
   const today = new Date().toLocaleDateString("fr-CA",{timeZone:"Europe/Paris"}); const rows = [];
   for(const p in ALLR) for(const x of ALLR[p].list) if(x.d >= today) rows.push(Object.assign({p}, x));
