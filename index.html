@@ -229,7 +229,7 @@ function handle(m){
 let pending = false; function schedule(){ if(!pending){ pending = true; requestAnimationFrame(() => { pending = false; render(); }); } }
 
 const MODE = {1:["t-reel","réel"],0:["t-blanc","à blanc"],pause:["t-pause","en pause"],arrete:["t-arr","arrêté"]};
-function nextReload(p){ if(!p[6]||p[5]==="pause"||p[5]==="arrete") return null; const st = Date.parse(p[6]), per = p[7]*60000; let n = st + per; while(n < Date.now()) n += per; return n; }
+function nextReload(p){ if(!p[6]||!(p[7]>0)||p[5]==="pause"||p[5]==="arrete") return null; const st = Date.parse(p[6]), per = p[7]*60000; let n = st + per; while(n < Date.now()) n += per; return n; }
 
 function render(){
   $("nmsg").textContent = nmsg;
