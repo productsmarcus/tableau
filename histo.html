@@ -1,0 +1,77 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Historique des sorties</title>
+<style>
+:root{--bg:#f4f6f3;--card:#fff;--ink:#1d2a22;--mute:#6b7a70;--line:#dfe5df;--green:#2f7d4a;--green2:#e3f2e8;--red:#b3261e;--red2:#fde4e2;--gold:#e9a93a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121815;--card:#1b231e;--ink:#e6ede8;--mute:#93a198;--line:#2c3830;--green2:#1f3a2a;--red2:#3d1f1d}}
+:root[data-theme="dark"]{--bg:#121815;--card:#1b231e;--ink:#e6ede8;--mute:#93a198;--line:#2c3830;--green2:#1f3a2a;--red2:#3d1f1d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:linear-gradient(135deg,#0f1f2e,#173b2c);color:#fff;padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px 8px;justify-content:center;text-align:center;border-bottom:3px solid var(--gold);position:sticky;top:0;z-index:5}
+header h1{margin:0 0 2px;font-size:19px;width:100%}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;color:#fff;font-size:12.5px;font-weight:600;white-space:nowrap;border:1px solid rgba(255,255,255,.15);text-decoration:none;background:#24313f}
+.p-tab{background:#1d4ed8}.p-dis{background:#0e7490}
+.dot{width:9px;height:9px;border-radius:50%;background:#7dff9c;box-shadow:0 0 6px #7dff9c;display:inline-block}.dot.off{background:#ff8a80;box-shadow:0 0 6px #ff8a80}
+main{max-width:1100px;margin:0 auto;padding:12px 16px;display:grid;gap:14px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.box h2{font-size:14px;margin:0;padding:8px 12px;background:#173b2c;color:#fff}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line)}
+.stat{background:var(--card);padding:10px 12px}.stat b{display:block;font-size:13px;margin-bottom:2px}.stat span{font-size:12px;color:var(--mute)}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+th{font-size:11.5px;color:var(--mute);font-weight:600;background:var(--bg)}
+td.ord{white-space:normal;min-width:240px}
+.t{display:inline-block;margin:1px 2px;padding:1px 5px;border-radius:5px;font-weight:700;font-size:11.5px;background:#eef1ee;color:#55635a}
+.t.us{background:var(--green);color:#fff}
+.who b{display:inline-block;min-width:16px;text-align:center;color:#fff;border-radius:4px;padding:0 4px;margin-right:2px;font-size:11px}
+.bN{background:#e83e8c}.bL{background:#7c3aed}.bT{background:#8b5a2b}
+.bad{color:var(--red);font-weight:700}.ok{color:var(--green);font-weight:700}
+.empty{padding:24px;text-align:center;color:var(--mute)}
+footer{text-align:center;font-size:12px;color:var(--mute);padding:4px 12px 20px}
+</style></head><body>
+<header>
+  <h1>Historique des sorties</h1>
+  <span class="pill"><span class="dot off" id="cdot"></span><span id="cstat">connexion…</span></span>
+  <span class="pill" id="upd">en attente des données d'obs1…</span>
+  <a class="pill p-tab" href="./">↔ Tableau de bord</a>
+  <a class="pill p-dis" href="dispo.html">📅 Créneaux dispo</a>
+</header>
+<main>
+  <section class="box"><h2>Heures de sortie relevées, par jour de séance</h2><div class="stats" id="stats"><div class="empty">–</div></div></section>
+  <section class="box"><h2>Séances</h2><div class="wrap"><table>
+    <thead><tr><th>Séance</th><th>Sortie relevée</th><th>Places de l'équipe</th><th>01–04 pris par d'autres</th><th>Libres à +3 min</th><th>Ordre de prise à l'heure principale (secondes après la sortie)</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="6" class="empty">En attente des données d'obs1…</td></tr></tbody></table></div></section>
+</main>
+<footer>Données publiées par obs1 (sujet ntfy laressourcerie-hist, au plus tard toutes les 6 h et après chaque bilan de sortie). En vert dans l'ordre de prise : numéros obtenus par l'équipe.</footer>
+<script>
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const JOURS=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+const dfr=d=>{ const x=new Date(d+"T12:00:00"); return JOURS[x.getDay()].slice(0,3)+". "+pad(x.getDate())+"/"+pad(x.getMonth()+1); };
+const tfr=iso=>{ if(!iso) return "–"; const x=new Date(iso); return JOURS[x.getDay()].slice(0,3)+". "+pad(x.getDate())+"/"+pad(x.getMonth()+1)+" "+x.toLocaleTimeString("fr-FR"); };
+let H=[], last=0;
+function render(){
+  if(!H.length){ $("rows").innerHTML='<tr><td colspan="6" class="empty">Aucune sortie enregistrée pour l\'instant.</td></tr>'; return; }
+  const rows=H.slice().sort((a,b)=>a.d<b.d?1:-1).map(e=>{
+    const team=new Set([...(e.N||[]),...(e.L||[]),...(e.T||[])]);
+    const who=["N","L","T"].map(k=>`<span class="who"><b class="b${k}">${k}</b>${(e[k]||[]).map(pad).join("+")||"—"}</span>`).join(" ");
+    const none=["N","L","T"].filter(k=>!(e[k]||[]).length);
+    const ks=Object.entries(e.k||{}).map(([n,ms])=>[+n,+ms]).sort((a,b)=>a[1]-b[1]);
+    const ord=ks.length?ks.map(([n,ms])=>`<span class="t${team.has(n)?" us":""}">${pad(n)} <small>+${(ms/1000).toFixed(1)}</small></span>`).join(""):'<span style="color:var(--mute)">non relevé</span>';
+    const init=(e.i||[]).length?`<div style="color:var(--mute);font-size:11px;margin-top:3px">sortis d'un coup : ${e.i.length} (${e.i.map(pad).join(", ")})</div>`:"";
+    return `<tr><td><b>${dfr(e.d)}</b> ${e.h||""}</td><td>${tfr(e.o)}</td><td>${who}${none.length?`<div class="bad">sans place : ${none.join(", ")}</div>`:""}</td><td>${(e.x||[]).length?`<span class="bad">${e.x.map(pad).join(", ")}</span>`:'<span class="ok">aucun</span>'}</td><td>${(e.f||[]).map(pad).join(", ")||"aucun"}</td><td class="ord">${ord}${init}</td></tr>`; });
+  $("rows").innerHTML=rows.join("");
+  const by={}; H.filter(e=>e.o).forEach(e=>{ const s=new Date(e.d+"T12:00:00").getDay(); const o=new Date(e.o); (by[s]=by[s]||[]).push(o.getHours()*3600+o.getMinutes()*60+o.getSeconds()+o.getMilliseconds()/1000); });
+  const hm=x=>pad(Math.floor(x/3600))+":"+pad(Math.floor(x%3600/60))+":"+pad(Math.floor(x%60));
+  const st=[2,3,4,6].map(w=>{ const a=by[w]||[]; if(!a.length) return `<div class="stat"><b>${JOURS[w]}</b><span>pas encore de relevé</span></div>`;
+    const mn=Math.min(...a), mx=Math.max(...a), av=a.reduce((p,c)=>p+c,0)/a.length;
+    return `<div class="stat"><b>${JOURS[w]} (${a.length})</b><span>au plus tôt ${hm(mn)} · au plus tard ${hm(mx)}<br>moyenne ${hm(av)}</span></div>`; });
+  $("stats").innerHTML=st.join("");
+}
+function take(m){ try{ const j=JSON.parse(m.message); if(j&&Array.isArray(j.h)&&(j.t||0)>=last){ last=j.t||0; H=j.h; $("upd").textContent="mis à jour "+new Date(last).toLocaleString("fr-FR",{weekday:"short",hour:"2-digit",minute:"2-digit"}); render(); } }catch(e){} }
+let es=null;
+function conn(){ try{ es=new EventSource("https://ntfy.sh/laressourcerie-hist/sse?since=24h");
+  es.onopen=()=>{ $("cdot").className="dot"; $("cstat").textContent="en direct"; };
+  es.onmessage=ev=>{ try{ take(JSON.parse(ev.data)); }catch(e){} };
+  es.onerror=()=>{ $("cdot").className="dot off"; $("cstat").textContent="reconnexion…"; if(es.readyState===2) setTimeout(conn,5000); }; }catch(e){ setTimeout(conn,5000); } }
+conn();
+</script>
+</body></html>
