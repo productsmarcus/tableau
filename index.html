@@ -102,7 +102,7 @@ tr.r14 td{font-weight:700}
 <script>
 "use strict";
 /* ===== Données fixes : répartition et dernier contrôle de Claude (à mettre à jour par Claude) ===== */
-const SNAP = { at: "2026-11-27T21:58:00+01:00", label: "état relevé par Claude le ven. 27/11 à 21:58 (Thomas : 02/12 n°02 repris de Lalia, 03/12 n°03 repris de Marc)" };
+const SNAP = { at: "2026-11-28T09:40:00+01:00", label: "état relevé par Claude le sam. 28/11 à 09:40 (Lalia : 28/11 n°02 annulé à la main à 09:37:58 ; Thomas : 02/12 n°02, 03/12 n°03)" };
 const P = [
  // profil, pc, compte, cible, version, mode (1 réel, 0 à blanc, "pause", "arrete"), démarré (ISO), relance (min), existe?
  ["obs1","maison","N","observateur · lecture directe du site (~3 s), relevé toutes les ~1,5 s, alerte SORTIE dès qu'une séance s'ouvre · profil nat1","v22m.14",1,"2026-11-26T17:00:00+01:00",140,1],
@@ -148,7 +148,7 @@ const P = [
  ["lal4","maison","L","tireur 01–04 manquants à l'équipe (N, L, Thomas), tir 10 min dès l'ouverture de la séance, commande sans calcul, relance immédiate si vu libre, laisse au relais les numéros déjà tenus ; annulé par le gestionnaire → repris pour une autre personne sans 01–04 (lecture continue, tir à la sortie)","tir8",1,"2026-11-27T20:43:00+01:00",98,1],
   ];
 const PLACES0 = { // places au moment du contrôle
- "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[6]},"2026-11-14":{N:[2],L:[]},"2026-11-17":{N:[3],L:[5]},"2026-11-18":{N:[2],L:[4]},"2026-11-19":{N:[2],L:[1]},"2026-11-21":{N:[1],L:[]}, "2026-11-24":{N:[1],L:[2]}, "2026-11-25":{N:[1],L:[]}, "2026-11-26":{N:[6],L:[1]}, "2026-11-28":{N:[1],L:[2]},"2026-12-01":{N:[3],L:[1]},"2026-12-02":{N:[1],L:[],M:[2]},"2026-12-03":{N:[1],L:[2],M:[3]}
+ "2026-11-03":{N:[1],L:[4]}, "2026-11-04":{N:[4],L:[]}, "2026-11-05":{N:[3],L:[4]}, "2026-11-07":{N:[2],L:[]}, "2026-11-10":{N:[7],L:[2]},"2026-11-12":{N:[4],L:[6]},"2026-11-14":{N:[2],L:[]},"2026-11-17":{N:[3],L:[5]},"2026-11-18":{N:[2],L:[4]},"2026-11-19":{N:[2],L:[1]},"2026-11-21":{N:[1],L:[]}, "2026-11-24":{N:[1],L:[2]}, "2026-11-25":{N:[1],L:[]}, "2026-11-26":{N:[6],L:[1]}, "2026-11-28":{N:[1],L:[]},"2026-12-01":{N:[3],L:[1]},"2026-12-02":{N:[1],L:[],M:[2]},"2026-12-03":{N:[1],L:[2],M:[3]}
 };
 const OPEN = {2:"14:00",3:"14:00",4:"14:00",6:"10:00"}; // jours de séance (mar, mer, jeu, sam)
 
@@ -158,6 +158,8 @@ const places = JSON.parse(JSON.stringify(PLACES0));
 const snapT = Date.parse(SNAP.at);
 const seen = new Set(); let nmsg = 0, lastId = null, es = null;
 const races = {}; // date -> {n -> {choice:Set, form:Set, won:role}}
+/* annulations ou réservations faites à la main, que nos profils n'annoncent pas sur ntfy */
+const HIST0 = [{t:new Date("2026-11-28T09:37:58+01:00").getTime(), role:"à la main (Lalia)", d:"2026-11-28", n:2, kind:"annulation", dry:false}];
 const hist = []; let feed = []; const feedSeen = new Set(); let FF = null; const FEEDCAP = 2000;
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2,"0");
@@ -260,7 +262,7 @@ function render(){
     const sub = !x ? "" : x.won ? (x.cancelled ? "annulé" : x.won) : (x.form.size ? x.form.size+" form" : x.choice.size ? x.choice.size+" ch." : "");
     return `<div class="mc${c}"><b>${pad(n)}</b><small>${sub}</small></div>`; }).join("");
   // historique
-  $("hist").innerHTML = hist.slice(0,60).map(h => `<tr><td>${hm(h.t)}</td><td>${h.role}</td><td>${dfr(h.d)}</td><td>${pad(h.n)}</td><td class="${h.kind==="annulation"?"ev-cancel":"ev-book"}">${h.kind}${h.dry?" (blanc)":""}</td></tr>`).join("") || `<tr><td class="mute" colspan="5">Rien depuis 12 h.</td></tr>`;
+  $("hist").innerHTML = [...hist, ...HIST0].sort((x,y)=>y.t-x.t).slice(0,60).map(h => `<tr><td>${hm(h.t)}</td><td>${h.role}</td><td>${dfr(h.d)}</td><td>${pad(h.n)}</td><td class="${h.kind==="annulation"?"ev-cancel":"ev-book"}">${h.kind}${h.dry?" (blanc)":""}</td></tr>`).join("") || `<tr><td class="mute" colspan="5">Rien depuis 12 h.</td></tr>`;
   // fil
   const fds = [...new Set(feed.map(f => f.d))].sort(); if(FF && !fds.includes(FF)) FF = null;
   const FL = FF ? feed.filter(f => f.d === FF) : feed;
